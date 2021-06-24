@@ -1,0 +1,34 @@
+POST http://localhost:3000/empApi/auth/signup
+Content-Type: application/json
+
+{"userName":"elavarasu.kcg@gmail.com","password":"asdf","firstName":"asdf","lastName":"asdf","contactNo":"98797","designation":"asdf","city":"asdf","country":"India","companyName":"cognizant"}
+
+###
+
+POST http://localhost:3000/empApi/jobs/create
+
+{"title": "test job title", "description": "test jbo description."}
+
+###
+
+POST http://localhost:3000/empApi/auth/resendActMail
+
+{"title": "test job title", "description": "test jbo description."}
+
+###
+GET http://localhost:3000/empApi/jobs/list_jobs
+
+### unique username validation
+POST http://localhost:3000/empApi/auth/unique-username
+Content-Type: application/json
+
+{"userName":"elavarasu.kcg@gmail.com"}
+
+### delete job
+DELETE http://localhost:3000/empApi/jobs/delete_job
+Content-Type: application/json
+
+### Resume Search
+POST http://localhost:3000/empApi/resumes/search
+Content-Type: application/json
+

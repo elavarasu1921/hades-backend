@@ -1,0 +1,33 @@
+POST http://localhost:3000/api/auth/signup
+Content-Type: application/json
+
+{"userName":"behati@princeloo","password":"asdf","firstName":"asdf","lastName":"asdf","contactNo":"98797","designation":"asdf","city":"asdf","country":"India","experience":"9"}
+# {"userName":"gisele@bundschen","password":"asdf","firstName":"asdf","lastName":"asdf","contactNo":"98797","designation":"asdf","city":"asdf","country":"India","experience":"9"}
+
+###
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{"userName":"andreea@diaconu.com","password":"asdf"}
+
+###
+
+POST http://localhost:3000/api/auth/reset-pwd
+Content-Type: application/json
+
+{"userName":"giselee@asdf"}
+
+###
+
+POST http://localhost:3000/api/personal/general
+Content-Type: application/json
+
+{"firstName":"giselee@asdf"}
+
+### Get personal Info
+GET http://localhost:3000/cndtApi/personal/get-prsnlInfo
+
+### get results
+POST http://localhost:3000/cndtApi/jobs/get-results
+Content-Type: application/json
+
