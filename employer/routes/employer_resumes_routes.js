@@ -7,6 +7,5 @@ router.post("/search", validation.jwtValidation, resumeController.employerSearch
 router.post("/resume-view", validation.jwtValidation, resumeController.employerOneResumeView);
 router.post("/download-resume", validation.jwtValidation, resumeController.empDownloadCndtResume);
 router.post("/get-resume-data", validation.jwtValidation, resumeController.getCndtResumeData);
-router.get("/getLookup-search", resumeController.getLookupForSearch);
 
 module.exports = router;

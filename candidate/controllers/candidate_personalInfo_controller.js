@@ -15,10 +15,10 @@ exports.getPersonalInfo = async (req, res, next) => {
     }
     // console.log('req.body', req.body);
     const userID = mongoose.Types.ObjectId(req.body.userID);
-    try {
-        const resp = await Candidate.findById(userID)
-            .select(
-                `
+    // try {
+    const resp = await Candidate.findById(userID)
+        .select(
+            `
                 personalInfo.name.firstName 
                 personalInfo.name.lastName 
                 personalInfo.gender
@@ -31,39 +31,42 @@ exports.getPersonalInfo = async (req, res, next) => {
                 personalInfo.socialMedia.linkedIn
                 personalInfo.phyDisabled
                 resume.originalName`
-            );
-        const personalInfoResp = {
-            firstName: resp.personalInfo.name.firstName,
-            lastName: resp.personalInfo.name.lastName,
-            gender: resp.personalInfo.gender,
-            maritalStatus: resp.personalInfo.maritalStatus,
-            experience: resp.personalInfo.experience,
-            phyDisabled: resp.personalInfo.phyDisabled
-        };
-        const contactInfoResp = {
-            skypeID: resp.personalInfo.contact.skypeID,
-            contactNo: resp.personalInfo.contact.no,
-            location: resp.personalInfo.location.combined,
-            country: resp.personalInfo.location.country,
-            linkedIn: resp.personalInfo.socialMedia.linkedIn,
-        };
-        const resume = {
-            name: resp.resume.originalName,
-        }
-        // console.log('personalinfo', personalInfoResp);
-        // console.log('contactinfo', contactInfoResp);
-        // console.log('retrieved', resp);
-        res.status(200).json({
-            personalInfoResp,
-            contactInfoResp,
-        });
-    } catch (err) {
-        console.log(err);
-        res.status(400).json({
-            errMessage: "Not able to retrieve data",
-        });
+        );
+
+    const personalInfoResp = {
+        firstName: resp.personalInfo.name.firstName,
+        lastName: resp.personalInfo.name.lastName,
+        gender: resp.personalInfo.gender,
+        maritalStatus: resp.personalInfo.maritalStatus,
+        experience: resp.personalInfo.experience,
+        phyDisabled: resp.personalInfo.phyDisabled
+    };
+
+    const contactInfoResp = {
+        skypeID: resp.personalInfo.contact.skypeID,
+        contactNo: resp.personalInfo.contact.no,
+        location: resp.personalInfo.location.combined,
+        country: resp.personalInfo.location.country,
+        linkedIn: resp.personalInfo.socialMedia.linkedIn,
+    };
+
+    const resume = {
+        name: resp.resume.originalName,
     }
+
+    res.status(200).json({
+        personalInfoResp,
+        contactInfoResp,
+    });
+
+    // } catch (err) {
+    //     console.log(err);
+    //     res.status(400).json({
+    //         errMessage: "Not able to retrieve data",
+    //     });
+    // }
     // console.log(req.body);
+
 };
 
 exports.updatePersonalInfo = async (req, res, next) => {

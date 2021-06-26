@@ -119,6 +119,7 @@ exports.employerOneResumeView = async (req, res, next) => {
         personalInfo.educationalInfo
         personalInfo.professionalInfo
         `)
+
     if (!fetchedCandidate) {
         console.log(fetchedCandidate);
         res.status(400).json({
@@ -126,6 +127,7 @@ exports.employerOneResumeView = async (req, res, next) => {
         })
         return;
     }
+
     let createdProfile = {
         name: fetchedCandidate.personalInfo.name.fullName,
         emailID: fetchedCandidate.userName,
@@ -195,48 +197,27 @@ exports.getCndtResumeData = async (req, res, next) => {
         .select('resume')
     let fileType = resp.resume.mimeType;
 
+    let resumeText
+
     if (fileType === docx || fileType === doc) {
-        let resumeText = await mammoth.convertToHtml({
+
+        resumeText = await mammoth.convertToHtml({
             path: resp.resume.convertedUrl
         })
-        res.status(200).json(resumeText.value);
+
+        if (!resumeText) {
+            console.log(resumeText);
+            res.status(400).json({
+                errorMsg: 'Not able to retrieve resume data',
+            })
+        }
+
     } else {
         res.status(400).json({
             errMessage: "Unsupported resume format"
         })
     }
 
-};
-
-exports.getLookupForSearch = async (req, res, next) => {
-
-    let fetchedLookups = await Lookup.find({
-            name: {
-                $in: ["location", 'exprange']
-            }
-        })
-        .select('name value bdvalue -_id')
-
-    if (!fetchedLookups) {
-        console.log(fetchedLookups);
-        res.status(400).json({
-            errorMsg: 'Not able to retrieve data',
-        })
-        return;
-    }
-
-    function groupBy(arr, property) {
-        return arr.reduce(function (memo, x) {
-            if (!memo[x[property]]) {
-                memo[x[property]] = [];
-            }
-            memo[x[property]].push(x);
-            return memo;
-        }, {});
-    }
-
-    let brokenArrays = groupBy(fetchedLookups, 'name');
-
-    res.status(200).json(brokenArrays);
+    res.status(200).json(resumeText.value);
 
 };

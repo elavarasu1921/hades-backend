@@ -179,44 +179,28 @@ exports.employerJobDelete = async (req, res, next) => {
     })
 }
 
-exports.employerPostJobsLookup = (req, res, next) => {
+exports.employerPostJobsLookup = async (req, res, next) => {
 
-    let postJobsLookup = {};
-    Lookup.find({
-            name: 'location'
+    let fetchedLookups = await Lookup.find({
+            name: {
+                $in: ['location', 'designation', 'exprange', 'skill']
+            }
         })
-        .select('value bdvalue -_id')
-        .then(resp => {
-            postJobsLookup.location = resp;
-            return Lookup.find({
-                    name: 'designation'
-                })
-                .select('value bdvalue -_id')
-        })
-        .then(resp => {
-            postJobsLookup.designation = resp;
-            return Lookup.find({
-                    name: 'exprange'
-                })
-                .select('value bdvalue -_id')
-        })
-        .then(resp => {
-            postJobsLookup.exprange = resp;
-            return Lookup.find({
-                    name: 'skill'
-                })
-                .select('value bdvalue -_id')
-        })
-        .then(resp => {
-            postJobsLookup.skill = resp;
-            res.status(200).json(postJobsLookup);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(200).json({
-                message: 'Error while fetching lookup'
-            })
-        })
+        .select('name value bdvalue -_id')
+
+    function groupBy(arr, property) {
+        return arr.reduce(function (memo, x) {
+            if (!memo[x[property]]) {
+                memo[x[property]] = [];
+            }
+            memo[x[property]].push(x);
+            return memo;
+        }, {});
+    }
+
+    let brokenArrays = groupBy(fetchedLookups, 'name');
+    res.status(200).json(brokenArrays);
+
 }
 
 exports.employerGetOneJob = async (req, res, next) => {
