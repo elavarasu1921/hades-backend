@@ -6,6 +6,7 @@ const validate = require("../middlewares/employer_jwt")
 
 router.post("/create", validate.jwtValidation, jobsController.employerJobsCreate);
 router.get("/my_jobs", validate.jwtValidation, jobsController.employerMyJobsList);
+router.get("/my_jobs_titles", validate.jwtValidation, jobsController.employerGetMyJobsTitles);
 router.get("/list_jobs", jobsController.employerAllJobsList);
 router.delete("/delete_job", validate.jwtValidation, jobsController.employerJobDelete);
 router.get("/postjobs-lookup", jobsController.employerPostJobsLookup);

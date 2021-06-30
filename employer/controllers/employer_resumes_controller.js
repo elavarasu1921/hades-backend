@@ -3,13 +3,24 @@ const Candidates = require('../../candidate/models/candidate_model');
 const Employers = require('../models/employer_model');
 const path = require('path');
 const mammoth = require('mammoth');
-const Lookup = require('../models/employer_lookup_model');
+const {
+    accessControl
+} = require('../middlewares/empoyer_access_control');
 
 exports.employerSearchResumes = async (req, res, next) => {
+
     let empID = mongoose.Types.ObjectId(req.body.userID);
 
     let empAccInfo = await Employers.findById(empID)
         .select('account.resumes');
+
+    if (!empAccInfo) {
+        console.log(empAccInfo);
+        res.status(400).json({
+            errorMsg: 'Not able to fetch employer account',
+        })
+        return;
+    }
 
     let dailyViewsLimit = empAccInfo.account.resumes.dailyLimit
     let viewsTillnowToday = empAccInfo.account.resumes.todayTotal
@@ -165,10 +176,24 @@ exports.employerOneResumeView = async (req, res, next) => {
         expectedDesignation: fetchedCandidate.professionalInfo.expected.designation,
         preferredCities: fetchedCandidate.professionalInfo.expected.cities,
     }
+
+    const permission = accessControl.can('admin').readAny('Candidates')
+
+    if (!permission.granted) {
+        console.log(permission.granted);
+        res.status(400).json({
+            errorMsg: 'Not authorized',
+        })
+        return;
+    }
+
+    let filteredCandidate = permission.filter(createdProfile);
+
     res.status(200).json({
-        profileData: createdProfile,
+        profileData: filteredCandidate,
         viewsRemaining: dailyViewsLimit - viewsTillnowToday
     });
+
 }
 
 exports.empDownloadCndtResume = async (req, res, next) => {

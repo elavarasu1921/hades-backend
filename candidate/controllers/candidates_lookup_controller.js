@@ -1,24 +1,32 @@
 const Lookup = require('../../employer/models/employer_lookup_model');
 
 exports.onJobSearch = async (req, res, next) => {
-    // console.log('working', req.body);
-    let fetchedLookups = await Lookup.aggregate([{
-        $match: {
-            $or: [{
-                name: 'location'
-            }, {
-                name: 'country'
-            }]
-        }
-    }, {
-        $group: {
-            _id: {
-                type: "$name"
+    let fetchedLookups = await Lookup.find({
+            name: {
+                $in: ["location", 'exprange']
             }
-        }
-    }])
-    // console.log('', fetchedLookups);
-    res.json({
-        asdf: 'wer'
-    })
+        })
+        .select('name value bdvalue -_id')
+
+    if (!fetchedLookups) {
+        console.log(fetchedLookups);
+        res.status(400).json({
+            errorMsg: 'Not able to retrieve lookup data',
+        })
+        return;
+    }
+
+    function groupBy(arr, property) {
+        return arr.reduce(function (memo, x) {
+            if (!memo[x[property]]) {
+                memo[x[property]] = [];
+            }
+            memo[x[property]].push(x);
+            return memo;
+        }, {});
+    }
+
+    let brokenArrays = groupBy(fetchedLookups, 'name');
+    res.status(200).json(brokenArrays);
+
 }

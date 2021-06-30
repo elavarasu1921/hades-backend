@@ -83,6 +83,7 @@ module.exports.resumeUpload = (req, res, next) => {
                     'resume.mimeType': file.mimetype,
                 }
             });
+
             if (resp.nModified = 0) {
                 console.log(resp);
                 res.status(400).json({

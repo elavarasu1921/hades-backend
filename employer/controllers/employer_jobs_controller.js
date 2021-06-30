@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
 const Jobs = require('../models/employer_jobs_model')
 const {
     createJobsValidation,
@@ -130,6 +129,19 @@ exports.employerMyJobsList = async (req, res, next) => {
         lastPage: Math.ceil(totalJobs / itemsPerPage),
     })
 }
+
+exports.employerGetMyJobsTitles = async (req, res, next) => {
+
+    let fetchedTitles = await Jobs.find({
+        userID: req.body.userID,
+        'info.status': {
+            $in: ['Expired', 'Live']
+        },
+    }, 'title')
+
+    res.status(200).json(fetchedTitles)
+
+};
 
 exports.employerAllJobsList = (req, res, next) => {
     // Need to add filter by user ID
@@ -316,46 +328,45 @@ exports.employerUpdateJob = (req, res, next) => {
 
 }
 
-// exports.getApplicantsforJob = async (req, res, next) => {
-
-//     let jobID = mongoose.Types.ObjectId(req.body.jobID);
-
-//     let fetchedApplicants = await Jobs.findById(jobID).select('applicants')
-
-//     if (!fetchedApplicants) {
-//         console.log(fetchedApplicants);
-//         res.status(400).json({
-//             errorMsg: 'Not able to fetch applicants',
-//         })
-//         return;
-//     }
-//     res.status(200).json(fetchedApplicants.applicants);
-
-// };
-
-// With Lookup 
-
 exports.getApplicantsforJob = async (req, res, next) => {
 
     let jobID = mongoose.Types.ObjectId(req.body.jobID);
 
-    let fetchedApplicants = await Jobs.aggregate([{
-        $lookup: {
-            from: "candidates",
-            localField: "applicants",
-            foreignField: "_id",
-            as: "applicants"
+    try {
+
+        let fetchedJobDetails = await Jobs.findById(jobID)
+            .select('title applicants.appliedOn applicants.status')
+            .populate('applicants.userID', 'name personalInfo.name.fullName personalInfo.location.city professionalInfo.current.designation')
+
+        if (!fetchedJobDetails) {
+            console.log(fetchedJobDetails);
+            res.status(400).json({
+                message: 'Error encountered',
+            })
+            return;
         }
-    }])
 
-    if (!fetchedApplicants) {
-        console.log(fetchedApplicants);
-        res.status(400).json({
-            errorMsg: 'Not able to fetch applicants',
+        let applicantsList = fetchedJobDetails.applicants.map(ele => {
+            const applicant = {};
+            applicant.name = ele.userID.personalInfo.name.fullName;
+            applicant.location = ele.userID.personalInfo.location.city;
+            applicant.designation = ele.userID.professionalInfo.current.designation;
+            applicant.appliedOn = ele.appliedOn;
+            applicant.status = ele.status;
+            return applicant;
         })
-        return;
+
+        let createdJobDetails = {
+            title: fetchedJobDetails.title,
+            applicantsList,
+        }
+
+        res.status(200).json(createdJobDetails);
+
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({
+            message: 'Error encountered',
+        })
     }
-
-    res.status(200).json(fetchedApplicants.applicants);
-
-};
+}

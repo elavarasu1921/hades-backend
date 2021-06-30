@@ -126,10 +126,10 @@ exports.onApplyToJob = async (req, res, next) => {
     }, {
         $addToSet: {
             applicants: {
-                userID: req.body.userID,
-                name: req.body.name,
-                location: req.body.location,
-                designation: req.body.designation,
+                userID: mongoose.Types.ObjectId(req.body.userID),
+                // name: req.body.name,
+                // location: req.body.location,
+                // designation: req.body.designation,
                 status: 'Applied',
                 appliedOn: Date.now(),
             }

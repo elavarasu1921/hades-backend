@@ -45,13 +45,21 @@ employerJobSchema = ({
         country: String,
         combined: String,
     },
+    // applicants: [{
+    //     userID: String,
+    //     name: String,
+    //     appliedOn: Date,
+    //     status: String,
+    //     location: String,
+    //     designation: String,
+    // }],
     applicants: [{
-        userID: String,
-        name: String,
+        userID: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Candidate"
+        },
         appliedOn: Date,
         status: String,
-        location: String,
-        designation: String,
     }],
     apply: {
         url: String,
