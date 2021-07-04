@@ -5,9 +5,6 @@ const createJobsValidation = formdata => {
     const createJobsValidationRule = {
         title: 'required',
         userID: 'string|required',
-        dates: {
-            posted: 'date',
-        },
         contact: {
             name: 'string',
             no: 'numeric',

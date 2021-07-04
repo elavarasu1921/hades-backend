@@ -12,7 +12,7 @@ employerJobSchema = ({
     dates: {
         posted: {
             type: Date,
-            required: true
+            default: Date.now(),
         },
         edited: Date,
         start: Date,
@@ -31,7 +31,10 @@ employerJobSchema = ({
         jobType: String,
         client: String,
         company: String,
-        status: String,
+        status: {
+            type: String,
+            default: 'Submitted'
+        }
     },
     skills: Array,
     description: {
@@ -45,14 +48,6 @@ employerJobSchema = ({
         country: String,
         combined: String,
     },
-    // applicants: [{
-    //     userID: String,
-    //     name: String,
-    //     appliedOn: Date,
-    //     status: String,
-    //     location: String,
-    //     designation: String,
-    // }],
     applicants: [{
         userID: {
             type: mongoose.Schema.Types.ObjectId,
@@ -61,6 +56,10 @@ employerJobSchema = ({
         appliedOn: Date,
         status: String,
     }],
+    applicants_count: {
+        type: Number,
+        default: 0,
+    },
     apply: {
         url: String,
         email: String,

@@ -1,21 +1,22 @@
-const multer = require('multer')
+const multer = require('multer');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const Candidate = require('../models/candidate_model');
 
 const DIR = './assets/cndtProfileImages';
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, DIR)
+        cb(null, DIR);
     },
     filename: (req, file, cb) => {
-        const fileName = file.originalname.toLowerCase().split(' ').join('-')
-        cb(null, require('crypto').randomBytes(3).toString('hex') + '_' + fileName)
-    }
-})
+        const fileName = file.originalname.toLowerCase().split(' ').join('-');
+        cb(null, `${crypto.randomBytes(3).toString('hex')}_${fileName}`);
+    },
+});
 
 const upload = multer({
-    storage: storage,
+    storage,
     fileFilter: (req, file, cb) => {
         if (file.mimetype === 'image/jpg' ||
             file.mimetype === 'image/jpeg' ||
@@ -27,42 +28,44 @@ const upload = multer({
         }
     },
     limits: {
-        fileSize: 2 * 1000 * 1000
-    }
-})
+        fileSize: 2 * 1000 * 1000,
+    },
+});
 
-module.exports.profileImgUpload = (req, res, next) => {
-    let userID = mongoose.Types.ObjectId(req.body.userID);
+module.exports.profileImgUpload = (req, res) => {
+    const userID = mongoose.Types.ObjectId(req.body.userID);
     return upload.single('profileImg')(req, res, () => {
-        const file = req.file;
+        const {
+            file,
+        } = req;
         if (file) {
             Candidate.findByIdAndUpdate(userID, {
                     $set: {
-                        'personalInfo.profileImgUrl': req.file.path
-                    }
+                        'personalInfo.profileImgUrl': req.file.path,
+                    },
                 })
-                .then(resp => {
+                .then((resp) => {
                     if (!resp) {
                         console.log(resp);
                         res.status(400).json({
-                            errMessage: "Profile Image couldn't be updated"
-                        })
+                            errMessage: "Profile Image couldn't be updated",
+                        });
                         return;
                     }
-                    res.status(200).json(req.file.path)
+                    res.status(200).json(req.file.path);
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.log(err);
                     res.status(400).json({
-                        errMessage: 'Issue while uploading profile image'
-                    })
-                })
+                        errMessage: 'Issue while uploading profile image',
+                    });
+                });
         } else {
             console.log('No file');
             res.status(400).json({
-                errMessage: 'File should be an image...'
+                errMessage: 'File should be an image...',
             });
         }
         // next()
-    })
-}
+    });
+};

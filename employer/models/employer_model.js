@@ -16,14 +16,26 @@ const employerSchema = mongoose.Schema({
     account: {
         emailValidationToken: String,
         emailValidationTokenExpiry: String,
-        status: String,
-        createdOn: Date,
+        status: {
+            type: String,
+            default: 'EmailPendingValidation'
+        },
+        createdOn: {
+            type: Date,
+            default: Date.now(),
+        },
         resumes: {
-            dailyLimit: Number,
+            dailyLimit: {
+                type: Number,
+                default: 100
+            },
             todayTotal: Number,
         },
         jobs: {
-            quota: Number,
+            quota: {
+                type: Number,
+                default: 10
+            },
             quotaUsed: Number,
             live: Number,
         },

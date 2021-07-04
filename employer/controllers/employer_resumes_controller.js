@@ -22,8 +22,8 @@ exports.employerSearchResumes = async (req, res, next) => {
         return;
     }
 
-    let dailyViewsLimit = empAccInfo.account.resumes.dailyLimit
-    let viewsTillnowToday = empAccInfo.account.resumes.todayTotal
+    let dailyViewsLimit = empAccInfo.account.resumes.dailyLimit;
+    let viewsTillnowToday = empAccInfo.account.resumes.todayTotal;
 
     let viewsRemaining = dailyViewsLimit - viewsTillnowToday;
 
@@ -87,12 +87,14 @@ exports.employerSearchResumes = async (req, res, next) => {
 }
 
 exports.employerOneResumeView = async (req, res, next) => {
+
     if (!req.body.cndtID) {
         res.status(400).json({
             errMessage: 'Invalid Request'
         });
         return
     }
+
     let cndtID = mongoose.Types.ObjectId(req.body.cndtID);
     let empID = mongoose.Types.ObjectId(req.body.userID);
 

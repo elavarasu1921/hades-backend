@@ -13,9 +13,6 @@ exports.employerJobsCreate = async (req, res, next) => {
     let createdJob = {
         title: req.body.title,
         userID: req.body.userID,
-        dates: {
-            posted: Date.now(),
-        },
         contact: {
             name: req.body.contactName,
             no: req.body.contactNo,
@@ -31,7 +28,6 @@ exports.employerJobsCreate = async (req, res, next) => {
             jobType: req.body.jobType,
             client: req.body.client,
             company: req.body.company,
-            status: 'Submitted',
         },
         apply: {
             url: req.body.applyUrl,

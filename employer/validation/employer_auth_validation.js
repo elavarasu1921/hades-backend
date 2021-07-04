@@ -24,14 +24,6 @@ const employerSignUpValidation = formData => {
         account: {
             emailValidationToken: 'string|required',
             emailValidationTokenExpiry: 'date|required',
-            status: 'string|required',
-            createdOn: 'date|required',
-            resumes: {
-                dailyLimit: 'numeric|required',
-            },
-            jobs: {
-                quota: 'numeric|required',
-            }
         }
     }
 

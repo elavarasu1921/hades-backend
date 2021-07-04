@@ -1,5 +1,4 @@
 const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const {
@@ -8,14 +7,10 @@ const {
 } = require('../validation/employer_auth_validation');
 const Employer = require('../models/employer_model');
 const mongoose = require('mongoose');
-
-let transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'elavarasu.kcg@gmail.com',
-        pass: 'tamilmagan'
-    }
-})
+require('dotenv').config();
+const {
+    email
+} = require('../utils/mailing');
 
 const JWT_EXPIRY_TIME = 36000;
 
@@ -45,14 +40,6 @@ exports.employerSignUp = async (req, res, next) => {
         account: {
             emailValidationToken: require('crypto').randomBytes(64).toString('hex'),
             emailValidationTokenExpiry: Date.now() + JWT_EXPIRY_TIME,
-            status: 'EmailPendingValidation',
-            createdOn: Date.now(),
-            resumes: {
-                dailyLimit: 100,
-            },
-            jobs: {
-                quota: 10,
-            }
         }
     }
     let result = employerSignUpValidation(createdEmployer);
@@ -73,25 +60,22 @@ exports.employerSignUp = async (req, res, next) => {
         })
         return;
     }
-    let mailOptions = {
-        from: 'elavarasu.kcg@gmail.com',
-        // to: resp.userName,
-        to: 'elavarasu.kcg@gmail.com',
-        subject: 'Welcome to Meridian',
-        html: `
-                <p>Account successfully registered...</p>
-                <p>Please click this <a href="http://localhost:4200/auth/activateAcc/${resp.account.emailValidationToken}">link</a> to activate your account.</p>
-                `
-    };
-    transporter.sendMail(mailOptions, (err, data) => {
-        if (err) {
-            console.log(err);
-        } else {
-            res.status(200).json({
-                msg: 'Employer Saved and Mail Sent'
-            });
-        }
-    })
+
+    if (resp) {
+        email.send({
+                template: 'after_register',
+                message: {
+                    to: 'elavarasu.kcg@gmail.com',
+                },
+                locals: {
+                    activationLink: `http://localhost:4200/auth/activateAcc/${resp.account.emailValidationToken}`,
+                },
+            })
+            .then(() => console.log('Activation Email Sent!!!'))
+            .catch(err => console.log('Mailer Issue:', err));
+    }
+
+
 }
 
 exports.employerActivateAccount = (req, res, next) => {
@@ -144,24 +128,18 @@ exports.employerResendActivationEmail = (req, res, next) => {
                 })
                 return;
             }
-            let mailOptions = {
-                from: 'elavarasu.kcg@gmail.com',
-                // to: resp.userName,
-                to: 'elavarasu.kcg@gmail.com',
-                subject: 'Account Reactivation',
-                html: `
-                <p>Please click this <a href="http://localhost:4200/auth/activateAcc/${resp.account.emailValidationToken}">link</a> to reactivate your account.</p>
-                `
-            }
-            transporter.sendMail(mailOptions, (err, data) => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    res.status(200).json({
-                        msg: 'Employer Saved and Mail Sent'
-                    });
-                }
-            })
+
+            email.send({
+                    template: 'after_register',
+                    message: {
+                        to: 'elavarasu.kcg@gmail.com',
+                    },
+                    locals: {
+                        activationLink: `http://localhost:4200/auth/activateAcc/${resp.account.emailValidationToken}`,
+                    },
+                })
+                .then(() => console.log('Activation Email Sent!!!'))
+                .catch(err => console.log('Mailer Issue:', err));
         })
         .catch(err => {
             console.log('Error', err);
@@ -194,12 +172,14 @@ exports.employerLogin = async (req, res, next) => {
     account.status
     primaryContact.fullName
     company.name`);
+
     if (!fetchedEmployer) {
         res.status(400).json({
             errorMsg: 'User Not Found'
         });
         return;
     }
+
     if (fetchedEmployer.account.status !== 'Active') {
         console.log(fetchedEmployer);
         res.status(400).json({
@@ -214,12 +194,14 @@ exports.employerLogin = async (req, res, next) => {
             errorMsg: 'Please check your login credentials...'
         })
     }
+
     const token = jwt.sign({
         userName,
         userID: new mongoose.Types.ObjectId(fetchedEmployer._id)
     }, process.env.JWT_SECRET_KEY, {
         expiresIn: JWT_EXPIRY_TIME
     })
+
     res.status(200).json({
         successMsg: 'LOgged In',
         user: {
@@ -262,28 +244,23 @@ exports.employerForgotPwd = async (req, res, next) => {
         return;
     };
 
-    let mailOptions = {
-        from: 'elavarasu.kcg@gmail.com',
-        // to: req.body.userName,
-        to: 'elavarasu.kcg@gmail.com',
-        subject: 'Password Reset',
-        html: `
-            <p>You requested a password reset</p>
-            <p>Click this <a href="http://localhost:4200/auth/reset-password/${token}">link</a> to reset your password</p>
-            `
-    }
-    transporter.sendMail(mailOptions, (err, data) => {
-        if (err) {
-            (err) => console.log(err);
-        } else {
-            res.sendStatus(200).json({
-                message: 'Reset Password Email Sent...',
+    email.send({
+            template: 'forgot_password',
+            message: {
+                to: 'elavarasu.kcg@gmail.com',
+            },
+            locals: {
+                forgotPwdLink: `http://localhost:4200/auth/reset-password/${token}`,
+            },
+        })
+        .then(() => {
+            console.log('Email Sent!!!');
+            res.status(200).json({
+                successMsg: "Reset Password Email Sent..."
             })
-        }
-    })
-    res.status(200).json({
-        successMsg: "Reset Password Email Sent..."
-    })
+        })
+        .catch(err => console.log('Mailer Issue:', err));
+
 };
 
 exports.employerResetPassword = async (req, res, next) => {
@@ -337,6 +314,7 @@ exports.employerUniqueUsername = async (req, res, next) => {
 }
 
 exports.employerChangePassword = async (req, res, next) => {
+
     if (!req.body.userID) return;
 
     let userID = mongoose.Types.ObjectId(req.body.userID);

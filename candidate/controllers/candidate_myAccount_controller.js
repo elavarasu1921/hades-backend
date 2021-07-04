@@ -1,23 +1,20 @@
-const Candidate = require("../models/candidate_model");
 const mongoose = require('mongoose');
 const path = require('path');
 const mammoth = require('mammoth');
+const Candidate = require('../models/candidate_model');
 
-exports.getMyAccountInfo = async (req, res, next) => {
-
+exports.getMyAccountInfo = async (req, res) => {
     if (!req.body.userID) {
         console.log(req.body);
         res.status(400).json({
             errorMsg: 'Not enough data',
-        })
+        });
         return;
     }
 
-    let userID = mongoose.Types.ObjectId(req.body.userID);
-    let docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    let doc = 'application/msword';
+    const userID = mongoose.Types.ObjectId(req.body.userID);
 
-    let fetchedCandidate = await Candidate.findById(userID)
+    const fetchedCandidate = await Candidate.findById(userID)
         .select(`
         personalInfo.name.fullName
         personalInfo.profileImgUrl
@@ -30,17 +27,17 @@ exports.getMyAccountInfo = async (req, res, next) => {
         educationalInfo
         professionalInfo.current
         professionalInfo.noticePeriod
-        `)
+        `);
 
     if (!fetchedCandidate) {
         console.log(fetchedCandidate);
         res.status(400).json({
-            errMessage: "Couldn't find profile info..."
-        })
+            errMessage: "Couldn't find profile info...",
+        });
         return;
     }
 
-    let createdCandidate = {
+    const createdCandidate = {
         name: fetchedCandidate.personalInfo.name.fullName,
         profileImgUrl: fetchedCandidate.personalInfo.profileImgUrl,
         emailID: fetchedCandidate.userName,
@@ -58,52 +55,49 @@ exports.getMyAccountInfo = async (req, res, next) => {
         pgUniversity: fetchedCandidate.educationalInfo.pgDegree.university,
         pgCollege: fetchedCandidate.educationalInfo.pgDegree.college,
         pgSpecialization: fetchedCandidate.educationalInfo.pgDegree.specialization,
-    }
+    };
 
     res.status(200).json(createdCandidate);
+};
 
-}
-
-exports.cndtResumeDownload = (req, res, next) => {
+exports.cndtResumeDownload = (req, res) => {
     if (!req.body.userID) return;
-    let userID = mongoose.Types.ObjectId(req.body.userID);
+    const userID = mongoose.Types.ObjectId(req.body.userID);
     Candidate.findById(userID)
         .select('resume.originalUrl')
-        .then(resp => {
+        .then((resp) => {
             if (!resp) {
                 console.log(resp);
                 res.status(400).json({
-                    msg: "Couldn't find resume to download"
+                    msg: "Couldn't find resume to download",
                 });
-                return;
             } else {
-                let filePath = path.join(__dirname, '../../') + resp.resume.originalUrl;
+                const filePath = path.join(__dirname, '../../') + resp.resume.originalUrl;
                 res.sendFile(filePath);
             }
-        })
-}
+        });
+};
 
-exports.getResumeData = async (req, res, next) => {
+exports.getResumeData = async (req, res) => {
     // console.log('working1');
 
-    let docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    let doc = 'application/msword';
+    const docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const doc = 'application/msword';
 
-    let userID = mongoose.Types.ObjectId(req.body.userID);
-    let resp = await Candidate.findById(userID)
-        .select('resume')
-    let fileType = resp.resume.mimeType;
+    const userID = mongoose.Types.ObjectId(req.body.userID);
+    const resp = await Candidate.findById(userID)
+        .select('resume');
+    const fileType = resp.resume.mimeType;
 
     if (fileType === docx || fileType === doc) {
         // console.log('working2');
-        let resumeText = await mammoth.convertToHtml({
-            path: resp.resume.convertedUrl
-        })
+        const resumeText = await mammoth.convertToHtml({
+            path: resp.resume.convertedUrl,
+        });
         res.status(200).json(resumeText.value);
     } else {
         res.status(400).json({
-            errMessage: "Unsupported resume format"
-        })
+            errMessage: 'Unsupported resume format',
+        });
     }
-
 };

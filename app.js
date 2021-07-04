@@ -9,6 +9,9 @@ const candidateRoutes = require('./al_routes/candidate_routes');
 const employerRoutes = require('./al_routes/employer_routes');
 const adminRoutes = require('./al_routes/admin_routes');
 
+const candidateCronJobs = require('./candidate/utils/cron_jobs');
+const employerCronJobs = require('./employer/utils/cron_jobs');
+
 const app = express();
 
 mongoose.connect(process.env.SERVER_URL, {
