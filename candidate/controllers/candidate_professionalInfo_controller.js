@@ -5,6 +5,7 @@ const {
 } = require('../validation/candidate_professional_validation');
 
 exports.updateProfessionalInfo = async (req, res) => {
+
     const userID = mongoose.Types.ObjectId(req.body.userID);
 
     const createdData = {
@@ -50,9 +51,11 @@ exports.updateProfessionalInfo = async (req, res) => {
     res.status(200).json({
         successMsg: 'Data updated',
     });
+
 };
 
 exports.getProfessionalInfo = async (req, res) => {
+
     const userID = mongoose.Types.ObjectId(req.body.userID);
 
     const resp = await Candidate.findById(userID).select('professionalInfo');
@@ -80,4 +83,5 @@ exports.getProfessionalInfo = async (req, res) => {
     };
 
     res.status(200).json(createdData);
+
 };

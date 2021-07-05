@@ -1,12 +1,12 @@
-const Jobs = require('../../employer/models/employer_jobs_model');
 const mongoose = require('mongoose');
+const Jobs = require('../../employer/models/employer_jobs_model');
 
 const THIRTYDAYS_IN_MILLISECONDS = 2592000000;
 
-exports.getAllSubmittedJobs = (req, res, next) => {
-    let status = req.body.status || ['Submitted', 'Live', 'Rejected', 'Expired', 'Deleted'];
+exports.getAllSubmittedJobs = (req, res) => {
+    const status = req.body.status || ['Submitted', 'Live', 'Rejected', 'Expired', 'Deleted'];
     Jobs.find({
-            "info.status": status
+            'info.status': status,
         })
         .select(`
             title
@@ -15,16 +15,16 @@ exports.getAllSubmittedJobs = (req, res, next) => {
             info.status
             info.jobType
             `)
-        .then(resp => {
+        .then((resp) => {
             if (!resp) {
                 console.log(resp);
                 res.status(400).json({
-                    errorMsg: "No Jobs Found"
-                })
+                    errorMsg: 'No Jobs Found',
+                });
                 return;
             }
-            let createdJobs = resp.map(ele => {
-                let eachJob = {};
+            const createdJobs = resp.map((ele) => {
+                const eachJob = {};
                 eachJob.id = ele._id;
                 eachJob.title = ele.title;
                 eachJob.postedOn = ele.dates.posted;
@@ -32,24 +32,24 @@ exports.getAllSubmittedJobs = (req, res, next) => {
                 eachJob.type = ele.info.jobType;
                 eachJob.company = ele.info.company;
                 return eachJob;
-            })
+            });
             res.status(200).json(createdJobs);
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
-                msg: 'Api hit'
+                msg: 'Api hit',
             });
-        })
-}
+        });
+};
 
-exports.getOneJobInfo = (req, res, next) => {
-    let jobID = mongoose.Types.ObjectId(req.body.jobID)
+exports.getOneJobInfo = (req, res) => {
+    const jobID = mongoose.Types.ObjectId(req.body.jobID);
     if (!jobID) {
         console.log(req.body);
         res.status(400).json({
-            errorMsg: 'Job ID Invalid'
-        })
+            errorMsg: 'Job ID Invalid',
+        });
         return;
     }
     Jobs.findById(jobID)
@@ -59,139 +59,139 @@ exports.getOneJobInfo = (req, res, next) => {
             info.status
             location.combined
             metrics`)
-        .then(resp => {
+        .then((resp) => {
             if (!resp) {
                 console.log(resp);
                 res.status(400).json({
-                    errorMsg: 'Not able to find requested data'
-                })
+                    errorMsg: 'Not able to find requested data',
+                });
                 return;
             }
-            let createdJob = {
+            const createdJob = {
                 status: resp.info.status,
                 location: resp.location.combined,
                 title: resp.title,
                 company: resp.company,
                 applications: resp.metrics.applications,
                 views: resp.metrics.views,
-            }
+            };
             res.status(200).json(createdJob);
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
-                errorMsg: 'Not able to perform action'
-            })
-        })
+                errorMsg: 'Not able to perform action',
+            });
+        });
 };
 
-exports.onApproveJob = (req, res, next) => {
-    let jobID = mongoose.Types.ObjectId(req.body.jobID);
+exports.onApproveJob = (req, res) => {
+    const jobID = mongoose.Types.ObjectId(req.body.jobID);
     if (!jobID) {
         console.log(req.body);
         res.status(400).json({
-            errorMsg: 'Job ID Invalid'
-        })
+            errorMsg: 'Job ID Invalid',
+        });
         return;
     }
     Jobs.updateOne({
-            _id: jobID
+            _id: jobID,
         }, {
             $set: {
-                "info.status": 'Live',
-                "dates.start": Date.now(),
-                "dates.expiry": Date.now() + THIRTYDAYS_IN_MILLISECONDS,
-            }
+                'info.status': 'Live',
+                'dates.start': Date.now(),
+                'dates.expiry': Date.now() + THIRTYDAYS_IN_MILLISECONDS,
+            },
         })
-        .then(resp => {
+        .then((resp) => {
             if (!resp) {
                 console.log(resp);
                 res.status(400).json({
-                    errorMsg: 'Not able to find requested Job'
-                })
+                    errorMsg: 'Not able to find requested Job',
+                });
                 return;
             }
             if (resp.nModified > 0) {
                 res.status(200).json(resp);
             }
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
-                errorMsg: 'Not able to find Job'
-            })
-        })
+                errorMsg: 'Not able to find Job',
+            });
+        });
 };
 
-exports.onRejectJob = (req, res, next) => {
-    let jobID = mongoose.Types.ObjectId(req.body.jobID);
+exports.onRejectJob = (req, res) => {
+    const jobID = mongoose.Types.ObjectId(req.body.jobID);
     Jobs.updateOne({
-            _id: jobID
+            _id: jobID,
         }, {
             $set: {
-                "info.status": 'Rejected',
-                "dates.start": '',
-                "dates.expiry": ''
-            }
+                'info.status': 'Rejected',
+                'dates.start': '',
+                'dates.expiry': '',
+            },
         })
-        .then(resp => {
+        .then((resp) => {
             if (!resp) {
                 res.status(400).json({
-                    errorMsg: 'Not able to find requested job'
-                })
+                    errorMsg: 'Not able to find requested job',
+                });
                 return;
             }
             if (resp.nModified < 0) {
-                console.log(err);
+                console.log(resp);
                 res.status(400).json({
-                    errorMsg: 'Not able to update job'
-                })
+                    errorMsg: 'Not able to update job',
+                });
                 return;
             }
             res.status(200).json({
-                successMsg: 'Job Updated'
+                successMsg: 'Job Updated',
             });
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
-                errorMsg: 'Not able to update job'
-            })
-        })
+                errorMsg: 'Not able to update job',
+            });
+        });
 };
 
-exports.onExpireJob = (req, res, next) => {
-    let jobID = mongoose.Types.ObjectId(req.body.jobID);
+exports.onExpireJob = (req, res) => {
+    const jobID = mongoose.Types.ObjectId(req.body.jobID);
     Jobs.updateOne({
-            _id: jobID
+            _id: jobID,
         }, {
             $set: {
-                "info.status": 'Expired',
-                "dates.expiry": Date.now(),
-            }
+                'info.status': 'Expired',
+                'dates.expiry': Date.now(),
+            },
         })
-        .then(resp => {
+        .then((resp) => {
             if (!resp) {
                 res.status(400).json({
-                    errorMsg: 'Not able to find requested job'
-                })
+                    errorMsg: 'Not able to find requested job',
+                });
                 return;
             }
             if (resp.nModified < 0) {
-                console.log(err);
+                console.log(resp);
                 res.status(400).json({
-                    errorMsg: 'Not able to update job'
-                })
+                    errorMsg: 'Not able to update job',
+                });
                 return;
             }
             res.status(200).json({
-                successMsg: 'Job Updated'
+                successMsg: 'Job Updated',
             });
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
-                errorMsg: 'Not able to update job'
-            })
-        })
+                errorMsg: 'Not able to update job',
+            });
+        });
 };

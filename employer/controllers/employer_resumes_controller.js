@@ -1,33 +1,32 @@
 const mongoose = require('mongoose');
-const Candidates = require('../../candidate/models/candidate_model');
-const Employers = require('../models/employer_model');
 const path = require('path');
 const mammoth = require('mammoth');
+const Candidates = require('../../candidate/models/candidate_model');
+const Employers = require('../models/employer_model');
 const {
-    accessControl
+    accessControl,
 } = require('../middlewares/empoyer_access_control');
 
-exports.employerSearchResumes = async (req, res, next) => {
+exports.employerSearchResumes = async (req, res) => {
+    const empID = mongoose.Types.ObjectId(req.body.userID);
 
-    let empID = mongoose.Types.ObjectId(req.body.userID);
-
-    let empAccInfo = await Employers.findById(empID)
+    const empAccInfo = await Employers.findById(empID)
         .select('account.resumes');
 
     if (!empAccInfo) {
         console.log(empAccInfo);
         res.status(400).json({
             errorMsg: 'Not able to fetch employer account',
-        })
+        });
         return;
     }
 
-    let dailyViewsLimit = empAccInfo.account.resumes.dailyLimit;
-    let viewsTillnowToday = empAccInfo.account.resumes.todayTotal;
+    const dailyViewsLimit = empAccInfo.account.resumes.dailyLimit;
+    const viewsTillnowToday = empAccInfo.account.resumes.todayTotal;
 
-    let viewsRemaining = dailyViewsLimit - viewsTillnowToday;
+    const viewsRemaining = dailyViewsLimit - viewsTillnowToday;
 
-    let searchResults = await Candidates.find()
+    const searchResults = await Candidates.find()
         .select(`
                 account.date.lastUpdated
                 personalInfo.name.fullName
@@ -42,23 +41,21 @@ exports.employerSearchResumes = async (req, res, next) => {
                 professionalInfo.domain
                 professionalInfo.noticePeriod
                 professionalInfo.skills
-                `)
+                `);
 
-    let getSkills = (arr) => {
-        arr.map(oneSkill => {
-            return oneSkill.name;
-        })
-    }
+    const getSkills = (arr) => {
+        arr.map((oneSkill) => oneSkill.name);
+    };
 
     if (!searchResults) {
         console.log(searchResults);
         res.status(400).json({
             errorMsg: 'Not able to fetch results',
-        })
+        });
         return;
     }
 
-    let results = searchResults.map(ele => {
+    const results = searchResults.map((ele) => {
         const eachResume = {};
         eachResume.cndtID = ele._id;
         eachResume.lastUpdated = ele.account.date.lastUpdated;
@@ -77,46 +74,44 @@ exports.employerSearchResumes = async (req, res, next) => {
         eachResume.pgDegree = ele.educationalInfo.pgDegree.degree;
         eachResume.skills = getSkills(ele.professionalInfo.skills);
         return eachResume;
-    })
+    });
 
     res.status(200).json({
         results,
-        viewsRemaining
-    })
+        viewsRemaining,
+    });
+};
 
-}
-
-exports.employerOneResumeView = async (req, res, next) => {
-
+exports.employerOneResumeView = async (req, res) => {
     if (!req.body.cndtID) {
         res.status(400).json({
-            errMessage: 'Invalid Request'
+            errMessage: 'Invalid Request',
         });
-        return
+        return;
     }
 
-    let cndtID = mongoose.Types.ObjectId(req.body.cndtID);
-    let empID = mongoose.Types.ObjectId(req.body.userID);
+    const cndtID = mongoose.Types.ObjectId(req.body.cndtID);
+    const empID = mongoose.Types.ObjectId(req.body.userID);
 
-    let empAccInfo = await Employers.findByIdAndUpdate(empID, {
+    const empAccInfo = await Employers.findByIdAndUpdate(empID, {
         $inc: {
-            "account.resumes.todayTotal": 1
-        }
+            'account.resumes.todayTotal': 1,
+        },
     }, {
-        new: true
+        new: true,
     }).select('account.resumes');
 
-    let dailyViewsLimit = empAccInfo.account.resumes.dailyLimit
-    let viewsTillnowToday = empAccInfo.account.resumes.todayTotal
+    const dailyViewsLimit = empAccInfo.account.resumes.dailyLimit;
+    const viewsTillnowToday = empAccInfo.account.resumes.todayTotal;
 
     if (viewsTillnowToday > dailyViewsLimit) {
         res.status(400).json({
             errorMsg: 'No views left',
-        })
+        });
         return;
     }
 
-    let fetchedCandidate = await Candidates.findById(cndtID)
+    const fetchedCandidate = await Candidates.findById(cndtID)
         .select(`
         userName
         resume
@@ -131,17 +126,17 @@ exports.employerOneResumeView = async (req, res, next) => {
         personalInfo.experience
         personalInfo.educationalInfo
         personalInfo.professionalInfo
-        `)
+        `);
 
     if (!fetchedCandidate) {
         console.log(fetchedCandidate);
         res.status(400).json({
-            errMessage: "No Profile found..."
-        })
+            errMessage: 'No Profile found...',
+        });
         return;
     }
 
-    let createdProfile = {
+    const createdProfile = {
         name: fetchedCandidate.personalInfo.name.fullName,
         emailID: fetchedCandidate.userName,
         resumeName: fetchedCandidate.resume.originalName,
@@ -177,74 +172,69 @@ exports.employerOneResumeView = async (req, res, next) => {
         salary: fetchedCandidate.professionalInfo.current.salary,
         expectedDesignation: fetchedCandidate.professionalInfo.expected.designation,
         preferredCities: fetchedCandidate.professionalInfo.expected.cities,
-    }
+    };
 
-    const permission = accessControl.can('admin').readAny('Candidates')
+    const permission = accessControl.can('admin').readAny('Candidates');
 
     if (!permission.granted) {
         console.log(permission.granted);
         res.status(400).json({
             errorMsg: 'Not authorized',
-        })
+        });
         return;
     }
 
-    let filteredCandidate = permission.filter(createdProfile);
+    const filteredCandidate = permission.filter(createdProfile);
 
     res.status(200).json({
         profileData: filteredCandidate,
-        viewsRemaining: dailyViewsLimit - viewsTillnowToday
+        viewsRemaining: dailyViewsLimit - viewsTillnowToday,
     });
+};
 
-}
-
-exports.empDownloadCndtResume = async (req, res, next) => {
+exports.empDownloadCndtResume = async (req, res) => {
     if (!req.body.cndtID) return;
-    let cndtID = mongoose.Types.ObjectId(req.body.cndtID);
+    const cndtID = mongoose.Types.ObjectId(req.body.cndtID);
 
-    let resumeUrl = await Candidates.findById(cndtID, 'resume.originalUrl')
+    const resumeUrl = await Candidates.findById(cndtID, 'resume.originalUrl');
     if (!resumeUrl) {
         console.log(resumeUrl);
         res.status(400).json({
-            errMessage: "Error finding profile"
-        })
+            errMessage: 'Error finding profile',
+        });
         return;
     }
-    let filePath = path.join(__dirname, '../../') + resumeUrl.resume.originalUrl;
+    const filePath = path.join(__dirname, '../../') + resumeUrl.resume.originalUrl;
     res.sendFile(filePath);
-}
+};
 
-exports.getCndtResumeData = async (req, res, next) => {
+exports.getCndtResumeData = async (req, res) => {
+    const docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const doc = 'application/msword';
 
-    let docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    let doc = 'application/msword';
+    const userID = mongoose.Types.ObjectId(req.body.cndtID);
+    const resp = await Candidates.findById(userID)
+        .select('resume');
+    const fileType = resp.resume.mimeType;
 
-    let userID = mongoose.Types.ObjectId(req.body.cndtID);
-    let resp = await Candidates.findById(userID)
-        .select('resume')
-    let fileType = resp.resume.mimeType;
-
-    let resumeText
+    let resumeText;
 
     if (fileType === docx || fileType === doc) {
-
         resumeText = await mammoth.convertToHtml({
-            path: resp.resume.convertedUrl
-        })
+            path: resp.resume.convertedUrl,
+        });
 
         if (!resumeText) {
             console.log(resumeText);
             res.status(400).json({
                 errorMsg: 'Not able to retrieve resume data',
-            })
+            });
         }
-
     } else {
         res.status(400).json({
-            errMessage: "Unsupported resume format"
-        })
+            errMessage: 'Unsupported resume format',
+        });
     }
 
     res.status(200).json(resumeText.value);
-
 };

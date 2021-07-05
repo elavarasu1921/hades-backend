@@ -1,7 +1,6 @@
 const Validator = require('validatorjs');
 
-const createJobsValidation = formdata => {
-
+const createJobsValidation = (formdata) => {
     const createJobsValidationRule = {
         title: 'required',
         userID: 'string|required',
@@ -27,27 +26,24 @@ const createJobsValidation = formdata => {
         qualification: 'string',
         location: {
             combined: 'string',
-            country: 'string'
-        }
-    }
+            country: 'string',
+        },
+    };
 
     const validator = new Validator(formdata, createJobsValidationRule);
     return validator;
+};
 
-}
-
-const getMyJobsValidation = formdata => {
-
+const getMyJobsValidation = (formdata) => {
     const getMyJobsValidationRule = {
         userID: 'required',
         currentPage: 'required',
         itemsPerPage: 'required',
-    }
+    };
 
     const validator = new Validator(formdata, getMyJobsValidationRule);
     return validator;
-
-}
+};
 
 module.exports.createJobsValidation = createJobsValidation;
 module.exports.getMyJobsValidation = getMyJobsValidation;

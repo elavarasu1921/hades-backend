@@ -1,7 +1,6 @@
 const Validator = require('validatorjs');
 
-const employerSignUpValidation = formData => {
-
+const employerSignUpValidation = (formData) => {
     const signUpRule = {
         userName: 'string|required',
         password: 'string|required',
@@ -19,30 +18,27 @@ const employerSignUpValidation = formData => {
                 state: 'string|required',
                 country: 'string|required',
                 combined: 'string|required',
-            }
+            },
         },
         account: {
             emailValidationToken: 'string|required',
             emailValidationTokenExpiry: 'date|required',
-        }
-    }
+        },
+    };
 
     const validator = new Validator(formData, signUpRule);
     return validator;
+};
 
-}
-
-const employerLoginValidation = formData => {
-
+const employerLoginValidation = (formData) => {
     const loginRule = {
         userName: 'string|required',
-        password: 'required'
-    }
+        password: 'required',
+    };
 
     const validator = new Validator(formData, loginRule);
     return validator;
-
-}
+};
 
 module.exports.employerSignUpValidation = employerSignUpValidation;
 module.exports.employerLoginValidation = employerLoginValidation;

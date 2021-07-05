@@ -1,7 +1,7 @@
-const Employers = require('../../employer/models/employer_model');
 const mongoose = require('mongoose');
+const Employers = require('../../employer/models/employer_model');
 
-exports.listAllEmployers = (req, res, next) => {
+exports.listAllEmployers = (req, res) => {
     Employers.find()
         .select(`
             company.name
@@ -11,16 +11,16 @@ exports.listAllEmployers = (req, res, next) => {
             account.createdOn
             account.jobs.live
             `)
-        .then(resp => {
+        .then((resp) => {
             if (!resp) {
                 console.log(resp);
                 res.status(400).json({
-                    errorMsg: 'No employers found'
-                })
+                    errorMsg: 'No employers found',
+                });
                 return;
             }
-            let createdEmployers = resp.map(ele => {
-                let oneEmployer = {};
+            const createdEmployers = resp.map((ele) => {
+                const oneEmployer = {};
                 oneEmployer.empID = ele._id;
                 oneEmployer.name = ele.company.name;
                 oneEmployer.contactName = ele.primaryContact.fullName;
@@ -30,19 +30,19 @@ exports.listAllEmployers = (req, res, next) => {
                 oneEmployer.status = ele.account.status;
 
                 return oneEmployer;
-            })
+            });
             res.status(200).json(createdEmployers);
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
-                errorMsg: 'Not able to retrieve employers'
-            })
-        })
+                errorMsg: 'Not able to retrieve employers',
+            });
+        });
 };
 
-exports.onGetOneEmployer = (req, res, next) => {
-    let empID = mongoose.Types.ObjectId(req.body.empID);
+exports.onGetOneEmployer = (req, res) => {
+    const empID = mongoose.Types.ObjectId(req.body.empID);
     Employers.findById(empID)
         .select(`
             company.name
@@ -55,15 +55,15 @@ exports.onGetOneEmployer = (req, res, next) => {
             account.jobs
             primaryContact.fullName
         `)
-        .then(resp => {
+        .then((resp) => {
             if (!resp) {
                 console.log(resp);
                 res.status(400).json({
-                    errorMsg: 'Not able to find employer'
-                })
+                    errorMsg: 'Not able to find employer',
+                });
                 return;
             }
-            let createdEmployer = {
+            const createdEmployer = {
                 name: resp.company.name,
                 empID: resp._id,
                 url: resp.company.url,
@@ -74,14 +74,14 @@ exports.onGetOneEmployer = (req, res, next) => {
                 dailyResumeLimit: resp.account.resumes.dailyLimit,
                 todayTotalView: resp.account.resumes.todayTotal,
                 jobsQuota: resp.account.jobs.quota,
-                liveJobs: resp.account.jobs.live
-            }
+                liveJobs: resp.account.jobs.live,
+            };
             res.status(200).json(createdEmployer);
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
-                errorMsg: 'Not able to perform find on employer list'
-            })
-        })
+                errorMsg: 'Not able to perform find on employer list',
+            });
+        });
 };

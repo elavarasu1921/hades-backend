@@ -30,4 +30,4 @@ const adminUserSchema = mongoose.Schema({
 
 adminUserSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model("Admin", adminUserSchema);
+module.exports = mongoose.model('Admin', adminUserSchema);

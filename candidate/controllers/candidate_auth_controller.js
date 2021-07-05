@@ -176,7 +176,9 @@ exports.login = async (req, res) => {
             errorMsg: 'User Not Found',
         });
     }
+
     const bcryptResult = await bcrypt.compare(password, fetchedCandidate.password);
+
     if (!bcryptResult) {
         res.status(400).json({
             errorMsg: 'Please check your login credentials...',

@@ -149,8 +149,6 @@ exports.onApplyToJob = async (req, res) => {
         return;
     }
 
-    console.log('', resp);
-
     if (resp && !resp.apply.email) {
         res.status(200).json({
             successMsg: 'Successfully Applied. Email Not available',

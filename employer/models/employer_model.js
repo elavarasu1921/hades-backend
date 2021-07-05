@@ -18,7 +18,7 @@ const employerSchema = mongoose.Schema({
         emailValidationTokenExpiry: String,
         status: {
             type: String,
-            default: 'EmailPendingValidation'
+            default: 'EmailPendingValidation',
         },
         createdOn: {
             type: Date,
@@ -27,14 +27,14 @@ const employerSchema = mongoose.Schema({
         resumes: {
             dailyLimit: {
                 type: Number,
-                default: 100
+                default: 100,
             },
             todayTotal: Number,
         },
         jobs: {
             quota: {
                 type: Number,
-                default: 10
+                default: 10,
             },
             quotaUsed: Number,
             live: Number,
@@ -60,8 +60,8 @@ const employerSchema = mongoose.Schema({
             combined: String,
         },
     },
-})
+});
 
 employerSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model("Employer", employerSchema);
+module.exports = mongoose.model('Employer', employerSchema);

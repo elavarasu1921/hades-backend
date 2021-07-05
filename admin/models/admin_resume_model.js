@@ -11,7 +11,6 @@ const adminResumeSchema = mongoose.Schema({
     certification: String,
     experience: String,
     technology: String,
-    experience: String,
-})
+});
 
-module.exports = mongoose.model("AdminResume", adminResumeSchema);
+module.exports = mongoose.model('AdminResume', adminResumeSchema);

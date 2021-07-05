@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 
 const adminJobRoutes = require('../admin/routes.js/admin_jobs_routes');

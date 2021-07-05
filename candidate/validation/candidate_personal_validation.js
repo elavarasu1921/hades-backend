@@ -1,7 +1,6 @@
 const Validator = require('validatorjs');
 
-const personalInfoValidation = formData => {
-
+const personalInfoValidation = (formData) => {
     const personalInfoRule = {
         'personalInfo.name.firstName': 'required|string',
         'personalInfo.name.lastName': 'required|string',
@@ -10,15 +9,13 @@ const personalInfoValidation = formData => {
         'personalInfo.maritalStatus': 'string',
         'personalInfo.phyDisabled': 'boolean',
         'personalInfo.experience': 'numeric',
-    }
+    };
 
     const validator = new Validator(formData, personalInfoRule);
     return validator;
+};
 
-}
-
-const contactInfoValidation = formData => {
-
+const contactInfoValidation = (formData) => {
     const contactInfoRule = {
         'personalInfo.contact.no': 'numeric|required',
         'personalInfo.contact.skypeID': 'string',
@@ -29,7 +26,7 @@ const contactInfoValidation = formData => {
 
     const validator = new Validator(formData, contactInfoRule);
     return validator;
-}
+};
 
 module.exports.personalInfoValidation = personalInfoValidation;
 module.exports.contactInfoValidation = contactInfoValidation;

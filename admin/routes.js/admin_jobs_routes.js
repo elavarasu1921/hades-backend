@@ -1,6 +1,7 @@
 const express = require('express');
-const router = express.Router();
 const adminJobsController = require('../controllers/admin_job_controller');
+
+const router = express.Router();
 
 router.post('/get-submitted', adminJobsController.getAllSubmittedJobs);
 router.post('/get-onejob', adminJobsController.getOneJobInfo);

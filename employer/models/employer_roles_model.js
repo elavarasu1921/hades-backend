@@ -11,4 +11,4 @@ const roleSchema = mongoose.Schema({
 });
 
 roleSchema.plugin(uniqueValidator);
-module.exports = mongoose.model("Role", roleSchema);
+module.exports = mongoose.model('Role', roleSchema);

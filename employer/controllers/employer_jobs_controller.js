@@ -1,16 +1,15 @@
 const mongoose = require('mongoose');
-const Jobs = require('../models/employer_jobs_model')
+const Jobs = require('../models/employer_jobs_model');
 const {
     createJobsValidation,
-    getMyJobsValidation
+    getMyJobsValidation,
 } = require('../validation/employer_jobs_validation');
 const Lookup = require('../models/employer_lookup_model');
 
-const THIRTY_DAYS_IN_MILLISECONDS = 2592000000;
+// const THIRTY_DAYS_IN_MILLISECONDS = 2592000000;
 
-exports.employerJobsCreate = async (req, res, next) => {
-
-    let createdJob = {
+exports.employerJobsCreate = async (req, res) => {
+    const createdJob = {
         title: req.body.title,
         userID: req.body.userID,
         contact: {
@@ -22,7 +21,6 @@ exports.employerJobsCreate = async (req, res, next) => {
             skills: req.body.skills,
             expRange: req.body.exprange,
             domain: req.body.domain,
-            expRange: req.body.exprange,
             salRange: req.body.salary,
             designation: req.body.designation,
             jobType: req.body.jobType,
@@ -37,81 +35,80 @@ exports.employerJobsCreate = async (req, res, next) => {
         location: {
             combined: req.body.location,
             country: req.body.country,
-        }
-    }
+        },
+    };
 
     const result = createJobsValidation(createdJob);
 
     if (result.fails()) {
         console.log(result.errors.all());
         res.status(400).json({
-            errMessage: 'Validation Error'
-        })
+            errMessage: 'Validation Error',
+        });
     }
 
     const job = new Jobs(createdJob);
 
-    let resp = await job.save();
+    const resp = await job.save();
 
-    if (resp.nModified = 0) {
+    if (resp.nModified === 0) {
         console.log(resp);
         res.status(400).json({
             errorMsg: 'Not able to save job',
-        })
+        });
         return;
     }
     res.status(200).json({
         successMsg: 'Job Successfully Saved...',
         data: resp,
-    })
+    });
+};
 
-}
-
-exports.employerMyJobsList = async (req, res, next) => {
-    let reqData = {
+exports.employerMyJobsList = async (req, res) => {
+    const reqData = {
         userID: mongoose.Types.ObjectId(req.body.userID),
         currentPage: +req.query.currentPage,
-        itemsPerPage: +req.query.itemsPerPage
-    }
+        itemsPerPage: +req.query.itemsPerPage,
+    };
     const result = getMyJobsValidation(reqData);
     if (result.fails()) {
         console.log('Data Missing');
         res.status(400).json({
-            errMessage: 'Data Missing'
-        })
+            errMessage: 'Data Missing',
+        });
         return;
-    };
+    }
     const {
         userID,
         currentPage,
-        itemsPerPage
+        itemsPerPage,
     } = reqData;
-    let totalJobs = await Jobs.find({
-            userID
+    const totalJobs = await Jobs.find({
+            userID,
         })
-        .countDocuments()
+        .countDocuments();
 
-    let fetchedJobs = await Jobs.find({
-            userID
+    const fetchedJobs = await Jobs.find({
+            userID,
         })
         .select('title dates.posted dates.expiry info.status metrics.applications')
         .skip((currentPage - 1) * itemsPerPage)
-        .limit(itemsPerPage)
+        .limit(itemsPerPage);
 
-    if (fetchedJobs.length == 0) {
+    if (fetchedJobs.length === 0) {
         res.status(200).json({
             successMsg: 'No Posts found...',
-        })
+        });
         return;
-    };
-    let createdJobs = fetchedJobs.map(ele => {
+    }
+    const createdJobs = fetchedJobs.map((ele) => {
         const tempJob = {};
-        tempJob['title'] = ele.title;
-        tempJob['_id'] = ele._id;
-        tempJob['status'] = ele.info.status;
-        tempJob['postedDate'] = ele.dates.posted;
-        tempJob['expiryDate'] = ele.dates.expiry;
-        tempJob['applications'] = ele.metrics.applications;
+        tempJob.title = ele.title;
+        tempJob._id = ele._id;
+        tempJob.status = ele.info.status;
+        tempJob.postedDate = ele.dates.posted;
+        tempJob.expiryDate = ele.dates.expiry;
+        tempJob.applications = ele.metrics.applications;
         return tempJob;
     });
     res.status(200).json({
@@ -123,81 +120,77 @@ exports.employerMyJobsList = async (req, res, next) => {
         previousPage: currentPage - 1,
         nextPage: +currentPage + 1,
         lastPage: Math.ceil(totalJobs / itemsPerPage),
-    })
-}
-
-exports.employerGetMyJobsTitles = async (req, res, next) => {
-
-    let fetchedTitles = await Jobs.find({
-        userID: req.body.userID,
-        'info.status': {
-            $in: ['Expired', 'Live']
-        },
-    }, 'title')
-
-    res.status(200).json(fetchedTitles)
-
+    });
 };
 
-exports.employerAllJobsList = (req, res, next) => {
+exports.employerGetMyJobsTitles = async (req, res) => {
+    const fetchedTitles = await Jobs.find({
+        userID: req.body.userID,
+        'info.status': {
+            $in: ['Expired', 'Live'],
+        },
+    }, 'title');
+
+    res.status(200).json(fetchedTitles);
+};
+
+exports.employerAllJobsList = (req, res) => {
     // Need to add filter by user ID
     Jobs.find()
-        .then(resp => {
+        .then((resp) => {
             res.status(200).json({
                 successMsg: 'Posts Successfully Retrieved...',
-                data: resp
-            })
+                data: resp,
+            });
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
-                errMessage: 'Data finding error...'
-            })
-        })
-}
+                errMessage: 'Data finding error...',
+            });
+        });
+};
 
-exports.employerJobDelete = async (req, res, next) => {
-
-    reqData = {
+exports.employerJobDelete = async (req, res) => {
+    const reqData = {
         userID: req.body.userID,
         jobID: mongoose.Types.ObjectId(req.query.jobID),
-    }
+    };
     const {
         userID,
-        jobID
+        jobID,
     } = reqData;
     if (!(userID && jobID)) {
         res.status(400).json({
-            errMessage: 'Data Missing'
-        })
+            errMessage: 'Data Missing',
+        });
         return;
     }
-    let resp = await Jobs.deleteOne({
+    const resp = await Jobs.deleteOne({
         userID,
-        _id: jobID
+        _id: jobID,
     });
-    if (resp.nModified == 1) {
+    if (resp.nModified === 1) {
         res.status(200).json({
-            successMsg: 'Job Deleted'
-        })
+            successMsg: 'Job Deleted',
+        });
         return;
     }
     res.status(400).json({
-        errMessage: 'No Job found'
-    })
-}
+        errMessage: 'No Job found',
+    });
+};
 
-exports.employerPostJobsLookup = async (req, res, next) => {
-
-    let fetchedLookups = await Lookup.find({
+exports.employerPostJobsLookup = async (req, res) => {
+    const fetchedLookups = await Lookup.find({
             name: {
-                $in: ['location', 'designation', 'exprange', 'skill']
-            }
+                $in: ['location', 'designation', 'exprange', 'skill'],
+            },
         })
-        .select('name value bdvalue -_id')
+        .select('name value bdvalue -_id');
 
     function groupBy(arr, property) {
-        return arr.reduce(function (memo, x) {
+        return arr.reduce((memo, x) => {
             if (!memo[x[property]]) {
                 memo[x[property]] = [];
             }
@@ -206,25 +199,23 @@ exports.employerPostJobsLookup = async (req, res, next) => {
         }, {});
     }
 
-    let brokenArrays = groupBy(fetchedLookups, 'name');
+    const brokenArrays = groupBy(fetchedLookups, 'name');
     res.status(200).json(brokenArrays);
+};
 
-}
-
-exports.employerGetOneJob = async (req, res, next) => {
-
-    let jobID = mongoose.Types.ObjectId(req.body.jobID);
+exports.employerGetOneJob = async (req, res) => {
+    const jobID = mongoose.Types.ObjectId(req.body.jobID);
 
     if (!jobID) {
         console.log(req.body);
         res.status(400).json({
             errorMsg: 'No Job ID',
-        })
+        });
         return;
     }
 
-    let resp = await Jobs.findById(jobID)
-    let createdJob = {
+    const resp = await Jobs.findById(jobID);
+    const createdJob = {
         title: resp.title,
         description: resp.description,
         qualification: resp.qualification,
@@ -241,24 +232,23 @@ exports.employerGetOneJob = async (req, res, next) => {
         contactEmail: resp.contact.email,
         location: resp.location.combined,
         country: resp.location.country,
-        applyUrl: resp.applyUrl
+        applyUrl: resp.applyUrl,
     };
     res.status(200).json(createdJob);
-}
+};
 
-exports.employerUpdateJob = (req, res, next) => {
-
-    let jobID = mongoose.Types.ObjectId(req.body.jobID);
+exports.employerUpdateJob = (req, res) => {
+    const jobID = mongoose.Types.ObjectId(req.body.jobID);
 
     if (!jobID) {
         console.log(req.body);
         res.status(400).json({
             errorMsg: 'No Job Id',
-        })
+        });
         return;
     }
 
-    let createdJob = {
+    const createdJob = {
         title: req.body.title,
         userID: req.body.userID,
         date: {
@@ -278,7 +268,7 @@ exports.employerUpdateJob = (req, res, next) => {
             jobType: req.body.jobType,
             client: req.body.client,
             company: req.body.company,
-            status: 'Submitted'
+            status: 'Submitted',
         },
         apply: {
             url: req.body.applyUrl,
@@ -287,9 +277,9 @@ exports.employerUpdateJob = (req, res, next) => {
         qualification: req.body.qualification,
         location: {
             combined: req.body.location,
-            country: req.body.country
-        }
-    }
+            country: req.body.country,
+        },
+    };
 
     const result = createJobsValidation(createdJob);
 
@@ -297,52 +287,49 @@ exports.employerUpdateJob = (req, res, next) => {
         console.log(result.errors.all());
         res.status(400).json({
             errorMsg: 'Validation Failed',
-        })
+        });
         return;
     }
 
     Jobs.updateOne({
-            _id: jobID
+            _id: jobID,
         }, {
-            $set: createdJob
+            $set: createdJob,
         })
-        .then(resp => {
-            if (resp.nModified == 1) {
+        .then((resp) => {
+            if (resp.nModified === 1) {
                 res.status(200).json({
                     message: 'Job Updated',
-                })
+                });
             }
             // console.log(resp);
         })
-        .catch(err => {
+        .catch((err) => {
             console.log(err);
             res.status(400).json({
                 message: 'Error encountered',
-                error: err
-            })
-        })
+                error: err,
+            });
+        });
+};
 
-}
-
-exports.getApplicantsforJob = async (req, res, next) => {
-
-    let jobID = mongoose.Types.ObjectId(req.body.jobID);
+exports.getApplicantsforJob = async (req, res) => {
+    const jobID = mongoose.Types.ObjectId(req.body.jobID);
 
     try {
-
-        let fetchedJobDetails = await Jobs.findById(jobID)
+        const fetchedJobDetails = await Jobs.findById(jobID)
             .select('title applicants.appliedOn applicants.status')
-            .populate('applicants.userID', 'name personalInfo.name.fullName personalInfo.location.city professionalInfo.current.designation')
+            .populate('applicants.userID', 'name personalInfo.name.fullName personalInfo.location.city professionalInfo.current.designation');
 
         if (!fetchedJobDetails) {
             console.log(fetchedJobDetails);
             res.status(400).json({
                 message: 'Error encountered',
-            })
+            });
             return;
         }
 
-        let applicantsList = fetchedJobDetails.applicants.map(ele => {
+        const applicantsList = fetchedJobDetails.applicants.map((ele) => {
             const applicant = {};
             applicant.name = ele.userID.personalInfo.name.fullName;
             applicant.location = ele.userID.personalInfo.location.city;
@@ -350,19 +337,18 @@ exports.getApplicantsforJob = async (req, res, next) => {
             applicant.appliedOn = ele.appliedOn;
             applicant.status = ele.status;
             return applicant;
-        })
+        });
 
-        let createdJobDetails = {
+        const createdJobDetails = {
             title: fetchedJobDetails.title,
             applicantsList,
-        }
+        };
 
         res.status(200).json(createdJobDetails);
-
     } catch (error) {
         console.log(error);
         res.status(400).json({
             message: 'Error encountered',
-        })
+        });
     }
-}
+};

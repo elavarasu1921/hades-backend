@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-employerLookupSchema = ({
+const employerLookupSchema = ({
     name: {
         type: String,
     },

@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 
-employerJobSchema = ({
+const employerJobSchema = ({
     userID: {
         type: String,
         required: true,
     },
     title: {
         type: String,
-        required: true
+        required: true,
     },
     dates: {
         posted: {
@@ -33,8 +33,8 @@ employerJobSchema = ({
         company: String,
         status: {
             type: String,
-            default: 'Submitted'
-        }
+            default: 'Submitted',
+        },
     },
     skills: Array,
     description: {
@@ -51,7 +51,7 @@ employerJobSchema = ({
     applicants: [{
         userID: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Candidate"
+            ref: 'Candidate',
         },
         appliedOn: Date,
         status: String,
@@ -67,7 +67,7 @@ employerJobSchema = ({
     metrics: {
         applications: Number,
         views: Number,
-    }
+    },
 });
 
 module.exports = mongoose.model('Job', employerJobSchema);

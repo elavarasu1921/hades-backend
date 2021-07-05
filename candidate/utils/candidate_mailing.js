@@ -2,16 +2,16 @@ const nodemailer = require('nodemailer');
 const Email = require('email-templates');
 const path = require('path');
 
-let transporter = nodemailer.createTransport({
+const transporter = nodemailer.createTransport({
     service: 'gmail',
     // host: "smtp.ethereal.email",
     // port: 587,
     // secure: false,
     auth: {
         user: process.env.NODEMAILER_USERNAME,
-        pass: process.env.NODEMAILER_PASSWORD
-    }
-})
+        pass: process.env.NODEMAILER_PASSWORD,
+    },
+});
 
 const email = new Email({
     transport: transporter,
@@ -24,14 +24,14 @@ const email = new Email({
         options: {
             extension: 'hbs',
         },
-        root: path.join(__dirname, "../assets/emails"),
+        root: path.join(__dirname, '../assets/emails'),
     },
     juiceResources: {
         preserveImportant: true,
         webResources: {
-            relativeTo: path.join(__dirname, '..', 'assets/emails')
-        }
-    }
+            relativeTo: path.join(__dirname, '..', 'assets/emails'),
+        },
+    },
 });
 
 module.exports.email = email;
