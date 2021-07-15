@@ -3,8 +3,9 @@ const Jobs = require('../../employer/models/employer_jobs_model');
 const {
     email,
 } = require('../utils/candidate_mailing');
+const CndtError = require('../middlewares/candidate_error_class');
 
-exports.getJobResults = async (req, res) => {
+exports.getJobResults = async (req, res, next) => {
     const fetchedResults = await Jobs.find({
             $text: {
                 $search: req.body.keywords,
@@ -26,9 +27,8 @@ exports.getJobResults = async (req, res) => {
 
     if (!fetchedResults) {
         console.log(fetchedResults);
-        res.status(400).json({
-            errorMsg: 'Not able to retrieve Jobs',
-        });
+        next(CndtError.badRequest('Not able to retrieve jobs...'));
+        return;
     }
     const createdJobs = fetchedResults.map((ele) => {
         const tempJob = {};
@@ -51,12 +51,10 @@ exports.getJobResults = async (req, res) => {
     res.status(200).json(createdJobs);
 };
 
-exports.getOneJob = async (req, res) => {
+exports.getOneJob = async (req, res, next) => {
     if (!req.body.jobID) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'Not enough data',
-        });
+        next(CndtError.badRequest('Not enough data...'));
         return;
     }
 
@@ -77,9 +75,7 @@ exports.getOneJob = async (req, res) => {
 
     if (!fetchedJob) {
         console.log(fetchedJob);
-        res.status(400).json({
-            errorMsg: 'No Job Found',
-        });
+        next(CndtError.badRequest('No Jobs Found...'));
         return;
     }
 
@@ -110,12 +106,10 @@ exports.getOneJob = async (req, res) => {
     res.status(200).json(createdJob);
 };
 
-exports.onApplyToJob = async (req, res) => {
+exports.onApplyToJob = async (req, res, next) => {
     if (!(req.body.jobID && req.body.userID)) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'Not enough data',
-        });
+        next(CndtError.badRequest('Not enough data...'));
         return;
     }
     const _id = mongoose.Types.ObjectId(req.body.jobID);
@@ -143,9 +137,7 @@ exports.onApplyToJob = async (req, res) => {
 
     if (!resp) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to apply',
-        });
+        next(CndtError.badRequest('Not able to apply'));
         return;
     }
 
@@ -174,8 +166,6 @@ exports.onApplyToJob = async (req, res) => {
         })
         .catch((err) => {
             console.log('', err);
-            res.status(400).json({
-                message: 'Error while applying',
-            });
+            next(CndtError.badRequest('Error while applying...'));
         });
 };

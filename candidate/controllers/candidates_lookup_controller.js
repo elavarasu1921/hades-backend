@@ -1,6 +1,7 @@
 const Lookup = require('../../employer/models/employer_lookup_model');
+const CndtError = require('../middlewares/candidate_error_class');
 
-exports.onJobSearch = async (req, res) => {
+exports.onJobSearch = async (req, res, next) => {
     const fetchedLookups = await Lookup.find({
             name: {
                 $in: ['location', 'exprange'],
@@ -10,9 +11,7 @@ exports.onJobSearch = async (req, res) => {
 
     if (!fetchedLookups) {
         console.log(fetchedLookups);
-        res.status(400).json({
-            errorMsg: 'Not able to retrieve lookup data',
-        });
+        next(CndtError.badRequest('Not able to retrieve lookup data'));
         return;
     }
 

@@ -2,13 +2,12 @@ const mongoose = require('mongoose');
 const path = require('path');
 const mammoth = require('mammoth');
 const Candidate = require('../models/candidate_model');
+const CndtError = require('../middlewares/candidate_error_class');
 
-exports.getMyAccountInfo = async (req, res) => {
+exports.getMyAccountInfo = async (req, res, next) => {
     if (!req.body.userID) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'Not enough data',
-        });
+        next(CndtError.badRequest('Not enough data...'));
         return;
     }
 
@@ -31,9 +30,7 @@ exports.getMyAccountInfo = async (req, res) => {
 
     if (!fetchedCandidate) {
         console.log(fetchedCandidate);
-        res.status(400).json({
-            errMessage: "Couldn't find profile info...",
-        });
+        next(CndtError.badRequest('Couldnt find profile info'));
         return;
     }
 
@@ -57,20 +54,22 @@ exports.getMyAccountInfo = async (req, res) => {
         pgSpecialization: fetchedCandidate.educationalInfo.pgDegree.specialization,
     };
 
+    // RedisClient.setex('createdCandidate', RedisExp, JSON.stringify(createdCandidate));
+
     res.status(200).json(createdCandidate);
 };
 
-exports.cndtResumeDownload = (req, res) => {
+exports.cndtResumeDownload = (req, res, next) => {
     if (!req.body.userID) return;
+
     const userID = mongoose.Types.ObjectId(req.body.userID);
+
     Candidate.findById(userID)
         .select('resume.originalUrl')
         .then((resp) => {
             if (!resp) {
                 console.log(resp);
-                res.status(400).json({
-                    msg: "Couldn't find resume to download",
-                });
+                next(CndtError.badRequest('Couldnt find resume to download...'));
             } else {
                 const filePath = path.join(__dirname, '../../') + resp.resume.originalUrl;
                 res.sendFile(filePath);
@@ -78,7 +77,7 @@ exports.cndtResumeDownload = (req, res) => {
         });
 };
 
-exports.getResumeData = async (req, res) => {
+exports.getResumeData = async (req, res, next) => {
     // console.log('working1');
 
     const docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -96,8 +95,6 @@ exports.getResumeData = async (req, res) => {
         });
         res.status(200).json(resumeText.value);
     } else {
-        res.status(400).json({
-            errMessage: 'Unsupported resume format',
-        });
+        next(CndtError.badRequest('Unsupported resume format'));
     }
 };

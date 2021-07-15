@@ -3,9 +3,9 @@ const Candidate = require('../models/candidate_model');
 const {
     professionalInfoValidation,
 } = require('../validation/candidate_professional_validation');
+const CndtError = require('../middlewares/candidate_error_class');
 
-exports.updateProfessionalInfo = async (req, res) => {
-
+exports.updateProfessionalInfo = async (req, res, next) => {
     const userID = mongoose.Types.ObjectId(req.body.userID);
 
     const createdData = {
@@ -28,9 +28,7 @@ exports.updateProfessionalInfo = async (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation failed',
-        });
+        next(CndtError.badRequest('Validation failed...'));
         return;
     }
 
@@ -42,29 +40,23 @@ exports.updateProfessionalInfo = async (req, res) => {
 
     if (resp.nModified === 0) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to update data',
-        });
+        next(CndtError.badRequest('Not able to update data...'));
         return;
     }
 
     res.status(200).json({
         successMsg: 'Data updated',
     });
-
 };
 
-exports.getProfessionalInfo = async (req, res) => {
-
+exports.getProfessionalInfo = async (req, res, next) => {
     const userID = mongoose.Types.ObjectId(req.body.userID);
 
     const resp = await Candidate.findById(userID).select('professionalInfo');
 
     if (!resp) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to find data',
-        });
+        next(CndtError.badRequest('Not able to find data...'));
         return;
     }
 
@@ -83,5 +75,4 @@ exports.getProfessionalInfo = async (req, res) => {
     };
 
     res.status(200).json(createdData);
-
 };

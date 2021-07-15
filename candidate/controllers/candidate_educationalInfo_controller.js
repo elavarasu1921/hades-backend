@@ -1,22 +1,20 @@
 const mongoose = require('mongoose');
 const Candidate = require('../models/candidate_model');
-
+const CndtError = require('../middlewares/candidate_error_class');
 const {
     ugInfoValidation,
     pgInfoValidation,
     certificationInfoValidation,
 } = require('../validation/candidate_educational_validation');
 
-exports.getEducationalData = (req, res) => {
+exports.getEducationalData = (req, res, next) => {
     const userID = mongoose.Types.ObjectId(req.body.userID);
     Candidate.findById(userID)
         .select('educationalInfo')
         .then((resp) => {
             if (!resp) {
                 console.log(resp);
-                res.status(400).json({
-                    errMessage: 'No data found',
-                });
+                next(CndtError.badRequest('No data found...'));
             }
             const createdInfo = {
                 ugDegree: {
@@ -49,13 +47,11 @@ exports.getEducationalData = (req, res) => {
         })
         .catch((err) => {
             console.log(err);
-            res.status(400).json({
-                errMessage: 'Error while fetching data',
-            });
+            next(CndtError.badRequest('Error while fetching data...'));
         });
 };
 
-exports.cndtUpdateUgInfo = async (req, res) => {
+exports.cndtUpdateUgInfo = async (req, res, next) => {
     const createdInfo = {
         degree: req.body.degree,
         university: req.body.university,
@@ -69,9 +65,7 @@ exports.cndtUpdateUgInfo = async (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(CndtError.badRequest('Validation Failed...'));
         return;
     }
 
@@ -88,9 +82,7 @@ exports.cndtUpdateUgInfo = async (req, res) => {
 
         if (resp.nModified === 0) {
             console.log(resp);
-            res.status(400).json({
-                errMessage: 'Data update not done',
-            });
+            next(CndtError.badRequest('Data update not done'));
             return;
         }
 
@@ -99,13 +91,11 @@ exports.cndtUpdateUgInfo = async (req, res) => {
         });
     } catch (err) {
         console.log(err);
-        res.status(400).json({
-            errMessage: 'Not able to update education info...',
-        });
+        next(CndtError.badRequest('Not able to update education info'));
     }
 };
 
-exports.cndtUpdatePgInfo = async (req, res) => {
+exports.cndtUpdatePgInfo = async (req, res, next) => {
     const createdInfo = {
         'educationalInfo.pgDegree.degree': req.body.degree,
         'educationalInfo.pgDegree.university': req.body.university,
@@ -119,9 +109,7 @@ exports.cndtUpdatePgInfo = async (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(CndtError.badRequest('Validation Failed...'));
         return;
     }
 
@@ -135,9 +123,7 @@ exports.cndtUpdatePgInfo = async (req, res) => {
 
     if (resp.nModified === 0) {
         console.log(resp);
-        res.status(400).json({
-            errMessage: 'Data update not done',
-        });
+        next(CndtError.badRequest('Date update not done...'));
     }
 
     res.status(200).json({
@@ -145,7 +131,7 @@ exports.cndtUpdatePgInfo = async (req, res) => {
     });
 };
 
-exports.cndtUpdateCertification = async (req, res) => {
+exports.cndtUpdateCertification = async (req, res, next) => {
     const createdInfo = {
         one: {
             name: req.body.certName01,
@@ -162,9 +148,7 @@ exports.cndtUpdateCertification = async (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(CndtError.badRequest('Validation failed...'));
         return;
     }
 
@@ -179,17 +163,13 @@ exports.cndtUpdateCertification = async (req, res) => {
         });
         if (resp.nModified === 0) {
             console.log(resp);
-            res.status(400).json({
-                errMessage: 'Data update not done',
-            });
+            next(CndtError.badRequest('Data update not done...'));
         }
         res.status(200).json({
             successMsg: 'Data updated',
         });
     } catch (err) {
         console.log(err);
-        res.status(400).json({
-            errorMsg: 'Not able to update',
-        });
+        next(CndtError.badRequest('Not able to update'));
     }
 };

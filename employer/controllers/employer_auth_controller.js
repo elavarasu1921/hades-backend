@@ -11,10 +11,11 @@ require('dotenv').config();
 const {
     email,
 } = require('../utils/mailing');
+const EmpError = require('../utils/employer_error_class');
 
 const JWT_EXPIRY_TIME = 36000;
 
-exports.employerSignUp = async (req, res) => {
+exports.employerSignUp = async (req, res, next) => {
     const hash$ = await bcrypt.hash(req.body.password, 10);
     const city = req.body.city.slice(0, req.body.city.length - 4);
     const state = req.body.city.slice(-2);
@@ -45,9 +46,7 @@ exports.employerSignUp = async (req, res) => {
     const result = employerSignUpValidation(createdEmployer);
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(EmpError.badRequest('Validation failed...'));
         return;
     }
     const employer = new Employer(createdEmployer);
@@ -55,9 +54,7 @@ exports.employerSignUp = async (req, res) => {
 
     if (!resp) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to register',
-        });
+        next(EmpError.badRequest('Not able to register'));
         return;
     }
 
@@ -76,7 +73,7 @@ exports.employerSignUp = async (req, res) => {
     }
 };
 
-exports.employerActivateAccount = (req, res) => {
+exports.employerActivateAccount = (req, res, next) => {
     Employer.findOneAndUpdate({
             'account.emailValidationToken': req.body.activationID,
         }, {
@@ -87,9 +84,7 @@ exports.employerActivateAccount = (req, res) => {
         .then((resp) => {
             if (!resp) {
                 console.log('no account', resp);
-                res.status(400).json({
-                    errMessage: 'Not able to find account',
-                });
+                next(EmpError.badRequest('Not able to find account...'));
                 return;
             }
             res.status(200).json({
@@ -98,17 +93,13 @@ exports.employerActivateAccount = (req, res) => {
         })
         .catch((err) => {
             console.log('error', err);
-            res.status(400).json({
-                errMessage: 'Find operation not performed',
-            });
+            next(EmpError.badRequest('Find Operation not performed'));
         });
 };
 
-exports.employerResendActivationEmail = (req, res) => {
+exports.employerResendActivationEmail = (req, res, next) => {
     if (!req.body.userName) {
-        res.status(400).json({
-            errMessage: 'No Email found',
-        });
+        next(EmpError.badRequest('No Email found...'));
         return;
     }
     Employer.findOneAndUpdate({
@@ -121,9 +112,7 @@ exports.employerResendActivationEmail = (req, res) => {
         .select('userName account.emailValidationToken')
         .then((resp) => {
             if (!resp) {
-                res.status(400).json({
-                    errMessage: 'User Not Found',
-                });
+                next(EmpError.badRequest('No user found...'));
                 return;
             }
 
@@ -141,20 +130,16 @@ exports.employerResendActivationEmail = (req, res) => {
         })
         .catch((err) => {
             console.log('Error', err);
-            res.status(400).json({
-                errMessage: 'issue occured while sending activation mail again...',
-            });
+            next(EmpError.badRequest('Issue occured while sending activation mail again...'));
         });
 };
 
-exports.employerLogin = async (req, res) => {
+exports.employerLogin = async (req, res, next) => {
     const result = employerLoginValidation(req.body);
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(EmpError.badRequest('Validation Error'));
         return;
     }
 
@@ -171,25 +156,20 @@ exports.employerLogin = async (req, res) => {
     company.name`);
 
     if (!fetchedEmployer) {
-        res.status(400).json({
-            errorMsg: 'User Not Found',
-        });
+        next(EmpError.badRequest('No user found...'));
         return;
     }
 
     if (fetchedEmployer.account.status !== 'Active') {
         console.log(fetchedEmployer);
-        res.status(400).json({
-            errorMsg: 'Employer Accont Not Active',
-        });
+        next(EmpError.badRequest('Emp error handler'));
         return;
     }
 
     const hash$ = await bcrypt.compare(password, fetchedEmployer.password);
     if (!hash$) {
-        res.status(400).json({
-            errorMsg: 'Please check your login credentials...',
-        });
+        next(EmpError.badRequest('Please check your credentials...'));
+        return;
     }
 
     const token = jwt.sign({
@@ -210,11 +190,9 @@ exports.employerLogin = async (req, res) => {
     });
 };
 
-exports.employerForgotPwd = async (req, res) => {
+exports.employerForgotPwd = async (req, res, next) => {
     if (!req.body.userName) {
-        res.status(400).json({
-            message: 'Email ID not valid',
-        });
+        next(EmpError.badRequest('Email not present...'));
     }
     const token = crypto.randomBytes(32).toString('hex');
     const resp = await Employer.updateOne({
@@ -227,16 +205,12 @@ exports.employerForgotPwd = async (req, res) => {
     });
     if (!resp.n) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Account with this email ID not found.',
-        });
+        next(EmpError.badRequest('Account with this email ID not found...'));
         return;
     }
     if (!resp.nModified) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to change password',
-        });
+        next(EmpError.badRequest('Not able to change password'));
         return;
     }
 
@@ -258,11 +232,9 @@ exports.employerForgotPwd = async (req, res) => {
         .catch((err) => console.log('Mailer Issue:', err));
 };
 
-exports.employerResetPassword = async (req, res) => {
+exports.employerResetPassword = async (req, res, next) => {
     if (!(req.body.pwdSetToken && req.body.newPassword)) {
-        res.status(400).json({
-            message: 'No data received',
-        });
+        next(EmpError.badRequest('No data received...'));
         return;
     }
     const hash$ = await bcrypt.hash(req.body.newPassword, 10);
@@ -277,9 +249,7 @@ exports.employerResetPassword = async (req, res) => {
         },
     });
     if (resp.nModified === 0) {
-        res.status(400).json({
-            message: 'Invalid Token',
-        });
+        next(EmpError.badRequest('Invalid Token'));
         return;
     }
     res.status(200).json({
@@ -287,20 +257,16 @@ exports.employerResetPassword = async (req, res) => {
     });
 };
 
-exports.employerUniqueUsername = async (req, res) => {
+exports.employerUniqueUsername = async (req, res, next) => {
     if (!req.body.userName) {
-        res.status(400).json({
-            errMessage: 'No username found',
-        });
+        next(EmpError.badRequest('No username found...'));
         return;
     }
     const user = await Employer.findOne({
         userName: req.body.userName,
     });
     if (user) {
-        res.status(400).json({
-            errMessage: 'Same UserName already present...',
-        });
+        next(EmpError.badRequest('Same username already present'));
         return;
     }
     res.status(200).json({
@@ -308,7 +274,7 @@ exports.employerUniqueUsername = async (req, res) => {
     });
 };
 
-exports.employerChangePassword = async (req, res) => {
+exports.employerChangePassword = async (req, res, next) => {
     if (!req.body.userID) return;
 
     const userID = mongoose.Types.ObjectId(req.body.userID);
@@ -319,9 +285,7 @@ exports.employerChangePassword = async (req, res) => {
 
     if (!oldHash$) {
         console.log(oldHash$);
-        res.status(400).json({
-            errorMsg: 'Incorrect password',
-        });
+        next(EmpError.badRequest('Incorrect password...'));
         return;
     }
 
@@ -337,17 +301,13 @@ exports.employerChangePassword = async (req, res) => {
 
     if (!resp.n) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to find user',
-        });
+        next(EmpError.badRequest('Not able to find user'));
         return;
     }
 
     if (!resp.nModified) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to update password',
-        });
+        next(EmpError.badRequest('Not able to update password'));
         return;
     }
 
@@ -355,3 +315,5 @@ exports.employerChangePassword = async (req, res) => {
         successMsg: 'Password Successfully Updated',
     });
 };
+
+exports.forTest = (a, b) => a + b;

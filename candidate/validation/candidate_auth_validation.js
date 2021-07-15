@@ -24,12 +24,6 @@ const signUpValidation = (formData) => {
         professionalInfo: {
             designation: 'required|string',
         },
-        account: {
-            date: {
-                createdOn: 'date|required',
-            },
-            visibility: 'string|required',
-        },
     };
 
     const validator = new Validator(formData, signUpRule);

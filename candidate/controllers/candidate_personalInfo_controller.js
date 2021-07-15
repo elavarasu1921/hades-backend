@@ -4,21 +4,19 @@ const {
     personalInfoValidation,
     contactInfoValidation,
 } = require('../validation/candidate_personal_validation');
+const CndtError = require('../middlewares/candidate_error_class');
 
-exports.getPersonalInfo = async (req, res) => {
+exports.getPersonalInfo = async (req, res, next) => {
     if (!req.body.userID) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'Not enough data',
-        });
+        next(CndtError.badRequest('Not enough data'));
         return;
     }
     // console.log('req.body', req.body);
     const userID = mongoose.Types.ObjectId(req.body.userID);
     // try {
     const resp = await Candidate.findById(userID)
-        .select(
-            `
+        .select(`
                 personalInfo.name.firstName 
                 personalInfo.name.lastName 
                 personalInfo.gender
@@ -30,8 +28,7 @@ exports.getPersonalInfo = async (req, res) => {
                 personalInfo.location.country
                 personalInfo.socialMedia.linkedIn
                 personalInfo.phyDisabled
-                resume.originalName`,
-        );
+                resume.originalName`);
 
     const personalInfoResp = {
         firstName: resp.personalInfo.name.firstName,
@@ -69,7 +66,7 @@ exports.getPersonalInfo = async (req, res) => {
     // console.log(req.body);
 };
 
-exports.updatePersonalInfo = async (req, res) => {
+exports.updatePersonalInfo = async (req, res, next) => {
     const createdUser = {
         'personalInfo.name.firstName': req.body.firstName,
         'personalInfo.name.lastName': req.body.lastName,
@@ -86,9 +83,7 @@ exports.updatePersonalInfo = async (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errMessage: 'Validation failed...',
-        });
+        next(CndtError.badRequest('Validation Failed'));
         return;
     }
 
@@ -100,9 +95,7 @@ exports.updatePersonalInfo = async (req, res) => {
 
     if (!resp.n) {
         console.log(resp);
-        res.status(400).json({
-            errMessage: 'Issue while updating...',
-        });
+        next(CndtError.badRequest('Issue while updating...'));
     } else {
         res.status(200).json({
             successMsg: 'Successfully updated...',
@@ -110,7 +103,7 @@ exports.updatePersonalInfo = async (req, res) => {
     }
 };
 
-exports.updateContactInfo = async (req, res) => {
+exports.updateContactInfo = async (req, res, next) => {
     const createdData = {
         'personalInfo.contact.no': req.body.contactNo,
         'personalInfo.contact.skypeID': req.body.skypeID,
@@ -123,9 +116,7 @@ exports.updateContactInfo = async (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(CndtError.badRequest('Validation Failed...'));
         return;
     }
 
@@ -140,8 +131,6 @@ exports.updateContactInfo = async (req, res) => {
         });
     } else {
         console.log(resp);
-        res.status(400).json({
-            errMessage: 'Not able to update',
-        });
+        next(CndtError.badRequest('Not able to update...'));
     }
 };

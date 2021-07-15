@@ -10,10 +10,12 @@ const Candidate = require('../models/candidate_model');
 const {
     email,
 } = require('../utils/candidate_mailing');
+const io = require('../../socket');
+const CndtError = require('../middlewares/candidate_error_class');
 
 const TOKEN_EXPIRY_TIME = 3600;
 
-exports.signup = async (req, res) => {
+exports.signup = async (req, res, next) => {
     const createdUser = {
         userName: req.body.formValue.userName,
         password: req.body.formValue.password,
@@ -38,11 +40,6 @@ exports.signup = async (req, res) => {
         account: {
             emailValidationToken: crypto.randomBytes(32).toString('hex'),
             emailValidationTokenExpiry: Date.now() + TOKEN_EXPIRY_TIME,
-            status: 'EmailPendingValidation',
-            date: {
-                createdOn: Date.now(),
-            },
-            visibility: 'Visible',
         },
     };
 
@@ -50,9 +47,7 @@ exports.signup = async (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(CndtError.badRequest('Validation Error'));
         return;
     }
 
@@ -64,9 +59,7 @@ exports.signup = async (req, res) => {
 
     if (!resp) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to created user',
-        });
+        next(CndtError.badRequest('Not able to created user...'));
         return;
     }
 
@@ -87,18 +80,14 @@ exports.signup = async (req, res) => {
         })
         .catch((err) => {
             console.log('Mailer Issue:', err);
-            res.status(400).json({
-                errorMsg: 'error sending activation email',
-            });
+            next(CndtError.badRequest('error sending activation email'));
         });
 };
 
-exports.candidateCheckUniqueUsername = async (req, res) => {
+exports.candidateCheckUniqueUsername = async (req, res, next) => {
     if (!req.body.userName) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'Not enough data',
-        });
+        next(CndtError.badRequest('Not Enough Data'));
         return;
     }
     const resp = await Candidate.findOne({
@@ -106,9 +95,7 @@ exports.candidateCheckUniqueUsername = async (req, res) => {
     }).select('_id');
     if (resp) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Candidate username already present',
-        });
+        next(CndtError.badRequest('Candidate username already present'));
         return;
     }
     res.status(200).json({
@@ -116,12 +103,10 @@ exports.candidateCheckUniqueUsername = async (req, res) => {
     });
 };
 
-exports.candidateAccountActivate = async (req, res) => {
+exports.candidateAccountActivate = async (req, res, next) => {
     if (!req.body.activationID) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'Not enough data',
-        });
+        next(CndtError.badRequest('Not Enough Data...'));
         return;
     }
 
@@ -135,24 +120,21 @@ exports.candidateAccountActivate = async (req, res) => {
 
     if (!resp.nModified) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to activate account',
-        });
+        next(CndtError.badRequest('Not able to activate account'));
         return;
     }
+
     res.status(200).json({
         successMsg: 'Account Activated',
     });
 };
 
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
     const result = loginValidation(req.body);
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(CndtError.badRequest('Validation Failed...'));
         return;
     }
 
@@ -171,18 +153,17 @@ exports.login = async (req, res) => {
             personalInfo.profileImgUrl
             personalInfo.name.fullName
             professionalInfo.current.designation`);
+
     if (!fetchedCandidate) {
-        res.status(400).json({
-            errorMsg: 'User Not Found',
-        });
+        next(CndtError.badRequest('No User Found'));
+        return;
     }
 
     const bcryptResult = await bcrypt.compare(password, fetchedCandidate.password);
 
     if (!bcryptResult) {
-        res.status(400).json({
-            errorMsg: 'Please check your login credentials...',
-        });
+        next(CndtError.badRequest('Please check your login credentials...'));
+        return;
     }
 
     const token = jwt.sign({
@@ -190,6 +171,11 @@ exports.login = async (req, res) => {
         userID: new mongoose.Types.ObjectId(fetchedCandidate._id),
     }, process.env.JWT_SECRET_KEY, {
         expiresIn: TOKEN_EXPIRY_TIME,
+    });
+
+    io.getIO().emit('login', {
+        action: 'loggedIn',
+        username: 'asdf',
     });
 
     res.status(200).json({
@@ -203,11 +189,9 @@ exports.login = async (req, res) => {
     });
 };
 
-exports.candidateForgotPassword = async (req, res) => {
+exports.candidateForgotPassword = async (req, res, next) => {
     if (!req.body.userName) {
-        res.status(400).json({
-            message: 'Email ID not valid',
-        });
+        next(CndtError.badRequest('Email ID is not valid'));
         return;
     }
 
@@ -225,17 +209,13 @@ exports.candidateForgotPassword = async (req, res) => {
 
         if (!resp.n) {
             console.log(resp);
-            res.status(400).json({
-                errorMsg: 'No candidate available with this email ID',
-            });
+            next(CndtError.badRequest('No candidate available with this email ID'));
             return;
         }
 
         if (!resp.nModified) {
             console.log(resp);
-            res.status(400).json({
-                errorMsg: 'Not able to update candidate',
-            });
+            next(CndtError.badRequest('Not able to update candidate'));
             return;
         }
 
@@ -257,17 +237,13 @@ exports.candidateForgotPassword = async (req, res) => {
             .catch((err) => console.log('Mailer Issue:', err));
     } catch (error) {
         console.log('', error);
-        res.status(400).json({
-            errorMsg: 'Not able to update candidate',
-        });
+        next(CndtError.badRequest('Not able to update candidate'));
     }
 };
 
-exports.resetPassword = async (req, res) => {
+exports.resetPassword = async (req, res, next) => {
     if (!req.body.resetID) {
-        res.status(400).json({
-            message: 'No data received',
-        });
+        next(CndtError.badRequest('No data received'));
         return;
     }
     const hash$ = await bcrypt.hash(req.body.password, 10);
@@ -283,17 +259,13 @@ exports.resetPassword = async (req, res) => {
 
     if (!resp.n) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'No Candidate Found',
-        });
+        next(CndtError.badRequest('No Candidate Found'));
         return;
     }
 
     if (!resp.nModified) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to update password',
-        });
+        next(CndtError.badRequest('Not able to update password'));
         return;
     }
 
@@ -302,14 +274,12 @@ exports.resetPassword = async (req, res) => {
     });
 };
 
-exports.candidateChangePassword = async (req, res) => {
+exports.candidateChangePassword = async (req, res, next) => {
     const userID = mongoose.Types.ObjectId(req.body.userID);
 
     if (req.body.newPassword !== req.body.confNewPassword) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'Passwords dont match',
-        });
+        next(CndtError.badRequest('Passwords dont match...'));
         return;
     }
 
@@ -319,9 +289,7 @@ exports.candidateChangePassword = async (req, res) => {
 
     if (!bcryptResult) {
         console.log(bcryptResult);
-        res.status(400).json({
-            errorMsg: 'Check credentials..',
-        });
+        next(CndtError.badRequest('Check credentials...'));
         return;
     }
 
@@ -335,9 +303,7 @@ exports.candidateChangePassword = async (req, res) => {
 
     if (resp.nModified === 0) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to update password',
-        });
+        next(CndtError.badRequest('Not able to update password...'));
         return;
     }
 

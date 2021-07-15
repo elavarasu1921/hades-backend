@@ -6,6 +6,7 @@ const {
 } = require('convert-multiple-files');
 const crypto = require('crypto');
 const AdminResume = require('../../admin/models/admin_resume_model');
+const CndtError = require('../middlewares/candidate_error_class');
 
 const DIR = './assets/cndtResumes';
 
@@ -47,7 +48,7 @@ const upload = multer({
     },
 });
 
-module.exports.resumeUpload = (req, res) => {
+module.exports.resumeUpload = (req, res, next) => {
     if (!req.body.userID) return;
     const userID = mongoose.Types.ObjectId(req.body.userID);
 
@@ -56,10 +57,8 @@ module.exports.resumeUpload = (req, res) => {
             file,
         } = req;
         if (!file) {
-            console.log('No file found');
-            res.status(400).json({
-                errorMsg: 'No file found',
-            });
+            next(CndtError.badRequest('No file found'));
+            return;
         }
 
         (async () => {
@@ -88,9 +87,8 @@ module.exports.resumeUpload = (req, res) => {
 
             if (resp.nModified === 0) {
                 console.log(resp);
-                res.status(400).json({
-                    errorMsg: 'Candidate not updated',
-                });
+                next(CndtError.badRequest('Candidate not updated'));
+                return;
             }
 
             const resume = new ResumeParser(parsingFilePath);

@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
+const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
 
 const candidateSchema = mongoose.Schema({
     userName: {
@@ -16,16 +16,22 @@ const candidateSchema = mongoose.Schema({
     account: {
         emailValidationToken: String,
         emailValidationTokenExpiry: String,
-        status: String,
+        status: {
+            type: String,
+            default: 'EmailPendingValidation',
+        },
         date: {
             createdOn: {
                 type: Date,
-                default: Date.now
+                default: Date.now,
             },
             lastViewed: Date,
             lastUpdated: Date,
         },
-        visibility: String,
+        visibility: {
+            type: String,
+            default: 'Visible',
+        },
     },
     personalInfo: {
         name: {
@@ -65,7 +71,7 @@ const candidateSchema = mongoose.Schema({
         proficiency: String,
         read: Boolean,
         write: Boolean,
-        speak: Boolean
+        speak: Boolean,
     }],
     educationalInfo: {
         ugDegree: {
@@ -94,8 +100,8 @@ const candidateSchema = mongoose.Schema({
                 name: String,
                 institute: String,
                 year: Number,
-            }
-        }
+            },
+        },
     },
     professionalInfo: {
         profileTitle: String,
@@ -112,7 +118,6 @@ const candidateSchema = mongoose.Schema({
             salary: String,
             cities: Array,
         },
-        domain: String,
         noticePeriod: String,
         skillsList: Array,
         skills: [{
@@ -131,9 +136,9 @@ const candidateSchema = mongoose.Schema({
             jobID: String,
             appliedOn: Date,
         }],
-    }
+    },
 });
 
 candidateSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model("Candidate", candidateSchema);
+module.exports = mongoose.model('Candidate', candidateSchema);

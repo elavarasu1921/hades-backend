@@ -5,10 +5,11 @@ const {
     getMyJobsValidation,
 } = require('../validation/employer_jobs_validation');
 const Lookup = require('../models/employer_lookup_model');
+const EmpError = require('../utils/employer_error_class');
 
 // const THIRTY_DAYS_IN_MILLISECONDS = 2592000000;
 
-exports.employerJobsCreate = async (req, res) => {
+exports.employerJobsCreate = async (req, res, next) => {
     const createdJob = {
         title: req.body.title,
         userID: req.body.userID,
@@ -42,9 +43,8 @@ exports.employerJobsCreate = async (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errMessage: 'Validation Error',
-        });
+        next(EmpError.badRequest('Validation Error...'));
+        return;
     }
 
     const job = new Jobs(createdJob);
@@ -53,9 +53,7 @@ exports.employerJobsCreate = async (req, res) => {
 
     if (resp.nModified === 0) {
         console.log(resp);
-        res.status(400).json({
-            errorMsg: 'Not able to save job',
-        });
+        next(EmpError.badRequest('Not able to save job...'));
         return;
     }
     res.status(200).json({
@@ -64,7 +62,7 @@ exports.employerJobsCreate = async (req, res) => {
     });
 };
 
-exports.employerMyJobsList = async (req, res) => {
+exports.employerMyJobsList = async (req, res, next) => {
     const reqData = {
         userID: mongoose.Types.ObjectId(req.body.userID),
         currentPage: +req.query.currentPage,
@@ -73,9 +71,7 @@ exports.employerMyJobsList = async (req, res) => {
     const result = getMyJobsValidation(reqData);
     if (result.fails()) {
         console.log('Data Missing');
-        res.status(400).json({
-            errMessage: 'Data Missing',
-        });
+        next(EmpError.badRequest('Data Missing...'));
         return;
     }
     const {
@@ -134,7 +130,7 @@ exports.employerGetMyJobsTitles = async (req, res) => {
     res.status(200).json(fetchedTitles);
 };
 
-exports.employerAllJobsList = (req, res) => {
+exports.employerAllJobsList = (req, res, next) => {
     // Need to add filter by user ID
     Jobs.find()
         .then((resp) => {
@@ -145,13 +141,11 @@ exports.employerAllJobsList = (req, res) => {
         })
         .catch((err) => {
             console.log(err);
-            res.status(400).json({
-                errMessage: 'Data finding error...',
-            });
+            next(EmpError.badRequest('No jobs found...'));
         });
 };
 
-exports.employerJobDelete = async (req, res) => {
+exports.employerJobDelete = async (req, res, next) => {
     const reqData = {
         userID: req.body.userID,
         jobID: mongoose.Types.ObjectId(req.query.jobID),
@@ -161,9 +155,7 @@ exports.employerJobDelete = async (req, res) => {
         jobID,
     } = reqData;
     if (!(userID && jobID)) {
-        res.status(400).json({
-            errMessage: 'Data Missing',
-        });
+        next(EmpError.badRequest('No jobs found...'));
         return;
     }
     const resp = await Jobs.deleteOne({
@@ -176,9 +168,7 @@ exports.employerJobDelete = async (req, res) => {
         });
         return;
     }
-    res.status(400).json({
-        errMessage: 'No Job found',
-    });
+    next(EmpError.badRequest('No job found...'));
 };
 
 exports.employerPostJobsLookup = async (req, res) => {
@@ -203,14 +193,12 @@ exports.employerPostJobsLookup = async (req, res) => {
     res.status(200).json(brokenArrays);
 };
 
-exports.employerGetOneJob = async (req, res) => {
+exports.employerGetOneJob = async (req, res, next) => {
     const jobID = mongoose.Types.ObjectId(req.body.jobID);
 
     if (!jobID) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'No Job ID',
-        });
+        next(EmpError.badRequest('No job ID...'));
         return;
     }
 
@@ -237,14 +225,12 @@ exports.employerGetOneJob = async (req, res) => {
     res.status(200).json(createdJob);
 };
 
-exports.employerUpdateJob = (req, res) => {
+exports.employerUpdateJob = (req, res, next) => {
     const jobID = mongoose.Types.ObjectId(req.body.jobID);
 
     if (!jobID) {
         console.log(req.body);
-        res.status(400).json({
-            errorMsg: 'No Job Id',
-        });
+        next(EmpError.badRequest('No job ID...'));
         return;
     }
 
@@ -285,9 +271,7 @@ exports.employerUpdateJob = (req, res) => {
 
     if (result.fails()) {
         console.log(result.errors.all());
-        res.status(400).json({
-            errorMsg: 'Validation Failed',
-        });
+        next(EmpError.badRequest('Validation failed...'));
         return;
     }
 
@@ -302,18 +286,14 @@ exports.employerUpdateJob = (req, res) => {
                     message: 'Job Updated',
                 });
             }
-            // console.log(resp);
         })
         .catch((err) => {
             console.log(err);
-            res.status(400).json({
-                message: 'Error encountered',
-                error: err,
-            });
+            next(EmpError.badRequest('Error Encountered...'));
         });
 };
 
-exports.getApplicantsforJob = async (req, res) => {
+exports.getApplicantsforJob = async (req, res, next) => {
     const jobID = mongoose.Types.ObjectId(req.body.jobID);
 
     try {
@@ -323,9 +303,7 @@ exports.getApplicantsforJob = async (req, res) => {
 
         if (!fetchedJobDetails) {
             console.log(fetchedJobDetails);
-            res.status(400).json({
-                message: 'Error encountered',
-            });
+            next(EmpError.badRequest('Error encountered'));
             return;
         }
 
@@ -347,8 +325,6 @@ exports.getApplicantsforJob = async (req, res) => {
         res.status(200).json(createdJobDetails);
     } catch (error) {
         console.log(error);
-        res.status(400).json({
-            message: 'Error encountered',
-        });
+        next(EmpError.badRequest('Error encountered...'));
     }
 };
